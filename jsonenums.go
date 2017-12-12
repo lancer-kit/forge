@@ -76,6 +76,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"go/format"
 	"io/ioutil"
@@ -88,9 +89,13 @@ import (
 )
 
 var (
-	typeNames    = flag.String("type", "", "comma-separated list of type names; must be set")
-	outputPrefix = flag.String("prefix", "", "prefix to be added to the output file")
-	outputSuffix = flag.String("suffix", "_jsonenums", "suffix to be added to the output file")
+	//json            = flag.Bool("json", false, "if true, json marshaling methods will be generated. Default: false")
+	//yaml            = flag.Bool("yaml", false, "if true, yaml marshaling methods will be generated. Default: false")
+	typeNames       = flag.String("type", "", "comma-separated list of type names; must be set")
+	transformMethod = flag.String("transform", "none", "enum item Name transformation method. Default: none")
+	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values. Default: true")
+	outputPrefix    = flag.String("prefix", "", "prefix to be added to the output file")
+	outputSuffix    = flag.String("suffix", "_jsonenums", "suffix to be added to the output file")
 )
 
 func main() {
@@ -121,11 +126,11 @@ func main() {
 	var analysis = struct {
 		Command        string
 		PackageName    string
-		TypesAndValues map[string][]string
+		TypesAndValues map[string][]TypeValue
 	}{
 		Command:        strings.Join(os.Args[1:], " "),
 		PackageName:    pkg.Name,
-		TypesAndValues: make(map[string][]string),
+		TypesAndValues: make(map[string][]TypeValue),
 	}
 
 	// Run generate for each type.
@@ -134,7 +139,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("finding values for type %v: %v", typeName, err)
 		}
-		analysis.TypesAndValues[typeName] = values
+
+		analysis.TypesAndValues[typeName], err = transformValues(typeName, values)
+		if err != nil {
+			log.Fatalf("generating code: %v", err)
+		}
 
 		var buf bytes.Buffer
 		if err := generatedTmpl.Execute(&buf, analysis); err != nil {
@@ -157,4 +166,36 @@ func main() {
 			log.Fatalf("writing output: %s", err)
 		}
 	}
+}
+
+type TypeValue struct {
+	Name string
+	Str  string
+}
+
+func transformValues(typeName string, values []string) ([]TypeValue, error) {
+	if transformMethod == nil {
+		return nil, errors.New("transform method is not defined")
+	}
+
+	transform, ok := Trasformers[*transformMethod]
+	if !ok {
+		return nil, errors.New("invalid transform method")
+	}
+
+	var str string
+	res := make([]TypeValue, len(values))
+
+	for i := range values {
+		str = values[i]
+		if !*addTypePrefix {
+			str = strings.Replace(str, typeName, "", 1)
+		}
+
+		res[i] = TypeValue{
+			Name: values[i],
+			Str:  transform(str),
+		}
+	}
+	return res, nil
 }

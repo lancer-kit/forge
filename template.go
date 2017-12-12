@@ -24,6 +24,7 @@ package {{.PackageName}}
 
 import (
     "encoding/json"
+    "errors"
     "fmt"
 )
 
@@ -31,24 +32,34 @@ import (
 
 var (
     _{{$typename}}NameToValue = map[string]{{$typename}} {
-        {{range $values}}"{{.}}": {{.}},
+        {{range $values}}"{{.Str}}": {{.Name}},
         {{end}}
     }
 
     _{{$typename}}ValueToName = map[{{$typename}}]string {
-        {{range $values}}{{.}}: "{{.}}",
+        {{range $values}}{{.Name}}: "{{.Str}}",
         {{end}}
     }
+    Err{{$typename}}Invalid = errors.New("{{$typename}} is invalid")
 )
 
 func init() {
     var v {{$typename}}
     if _, ok := interface{}(v).(fmt.Stringer); ok {
         _{{$typename}}NameToValue = map[string]{{$typename}} {
-            {{range $values}}interface{}({{.}}).(fmt.Stringer).String(): {{.}},
+            {{range $values}}interface{}({{.Name}}).(fmt.Stringer).String(): {{.Name}},
             {{end}}
         }
     }
+}
+
+// Validate verifies that value is predefined for {{$typename}}.
+func (r {{$typename}}) Validate() error {
+    _, ok := _{{$typename}}ValueToName[r]
+    if !ok {
+        return Err{{$typename}}Invalid
+    }
+    return nil
 }
 
 // MarshalJSON is generated so {{$typename}} satisfies json.Marshaler.
