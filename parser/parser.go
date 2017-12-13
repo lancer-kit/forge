@@ -29,6 +29,18 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
+var listOfTypeVars = []string{
+	"NameToValue",
+	"ValueToName",
+}
+
+var listOfTypeMethods = []string{
+	"String",
+	"Validate",
+	"MarshalJSON",
+	"UnmarshalJSON",
+}
+
 // A Package contains all the information related to a parsed package.
 type Package struct {
 	Name  string
@@ -61,31 +73,53 @@ func ParsePackage(directory string) (*Package, error) {
 }
 
 // generate produces the String method for the named type.
-func (pkg *Package) ValuesOfType(typeName string) ([]string, error) {
+func (pkg *Package) ValuesOfType(typeName string) ([]string, map[string]bool, error) {
 	var values, inspectErrs []string
+	tmplsToExclude := map[string]bool{}
+
 	for _, file := range pkg.files {
 		ast.Inspect(file, func(node ast.Node) bool {
-			decl, ok := node.(*ast.GenDecl)
-			if !ok || decl.Tok != token.CONST {
-				// We only care about const declarations.
+
+			switch decl := node.(type) {
+			case *ast.GenDecl:
+				switch decl.Tok {
+				case token.CONST:
+					vs, err := pkg.valuesOfTypeIn(typeName, decl)
+					values = append(values, vs...)
+					if err != nil {
+						inspectErrs = append(inspectErrs, err.Error())
+					}
+
+				case token.VAR:
+					vs := pkg.varOfTypeIn(typeName, decl)
+					for k, v := range vs {
+						tmplsToExclude[k] = v
+					}
+				default:
+					return true
+				}
+
+			case *ast.FuncDecl:
+				vs := pkg.methodsOfTypeIn(typeName, decl)
+				for k, v := range vs {
+					tmplsToExclude[k] = v
+				}
+			default:
 				return true
 			}
 
-			if vs, err := pkg.valuesOfTypeIn(typeName, decl); err != nil {
-				inspectErrs = append(inspectErrs, err.Error())
-			} else {
-				values = append(values, vs...)
-			}
 			return false
 		})
 	}
+
 	if len(inspectErrs) > 0 {
-		return nil, fmt.Errorf("inspecting code:\n\t%v", strings.Join(inspectErrs, "\n\t"))
+		return nil, nil, fmt.Errorf("inspecting code:\n\t%v", strings.Join(inspectErrs, "\n\t"))
 	}
 	if len(values) == 0 {
-		return nil, fmt.Errorf("no values defined for type %s", typeName)
+		return nil, nil, fmt.Errorf("no values defined for type %s", typeName)
 	}
-	return values, nil
+
+	return values, tmplsToExclude, nil
 }
 
 func (pkg *Package) valuesOfTypeIn(typeName string, decl *ast.GenDecl) ([]string, error) {
@@ -145,4 +179,76 @@ func (pkg *Package) valuesOfTypeIn(typeName string, decl *ast.GenDecl) ([]string
 		}
 	}
 	return values, nil
+}
+
+func (pkg *Package) methodsOfTypeIn(typeName string, decl *ast.FuncDecl) map[string]bool {
+	if decl.Recv == nil || decl.Name == nil {
+		return nil
+	}
+
+	var isTypeMethod bool
+	for _, field := range decl.Recv.List {
+		if field.Type == nil {
+			continue
+		}
+
+		var ok bool
+		var ident *ast.Ident
+
+		switch i := field.Type.(type) {
+		case *ast.StarExpr:
+			ident, ok = i.X.(*ast.Ident)
+		case *ast.Ident:
+			ident = i
+			ok = true
+		}
+
+		if !ok {
+			continue
+		}
+
+		if ident.Name == typeName {
+			isTypeMethod = true
+		}
+
+	}
+
+	if !isTypeMethod {
+		return nil
+	}
+
+	tmpls := map[string]bool{}
+	for _, v := range listOfTypeMethods {
+		if !strings.Contains(decl.Name.Name, v) {
+			continue
+		}
+		tmpls[v] = true
+	}
+
+	return tmpls
+}
+
+func (pkg *Package) varOfTypeIn(typeName string, decl *ast.GenDecl) map[string]bool {
+	tmpls := map[string]bool{}
+
+	for _, spec := range decl.Specs {
+		vspec, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			return tmpls
+		}
+
+		for _, name := range vspec.Names {
+			if name.Name == "_" {
+				continue
+			}
+
+			for _, v := range listOfTypeVars {
+				if !strings.Contains(name.Name, v) {
+					continue
+				}
+				tmpls[v] = true
+			}
+		}
+	}
+	return tmpls
 }

@@ -76,7 +76,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"go/format"
 	"io/ioutil"
@@ -89,8 +88,6 @@ import (
 )
 
 var (
-	//json            = flag.Bool("json", false, "if true, json marshaling methods will be generated. Default: false")
-	//yaml            = flag.Bool("yaml", false, "if true, yaml marshaling methods will be generated. Default: false")
 	typeNames       = flag.String("type", "", "comma-separated list of type names; must be set")
 	transformMethod = flag.String("transform", "none", "enum item Name transformation method. Default: none")
 	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values. Default: true")
@@ -135,7 +132,7 @@ func main() {
 
 	// Run generate for each type.
 	for _, typeName := range types {
-		values, err := pkg.ValuesOfType(typeName)
+		values, tmplsToExclude, err := pkg.ValuesOfType(typeName)
 		if err != nil {
 			log.Fatalf("finding values for type %v: %v", typeName, err)
 		}
@@ -145,19 +142,7 @@ func main() {
 			log.Fatalf("generating code: %v", err)
 		}
 
-		var buf bytes.Buffer
-		if err := generatedTmpl.Execute(&buf, analysis); err != nil {
-			log.Fatalf("generating code: %v", err)
-		}
-
-		src, err := format.Source(buf.Bytes())
-		if err != nil {
-			// Should never happen, but can arise when developing this code.
-			// The user can compile the output to see the error.
-			log.Printf("warning: internal error: invalid Go generated: %s", err)
-			log.Printf("warning: compile the package to analyze the error")
-			src = buf.Bytes()
-		}
+		src := generateByTemplate(analysis, tmplsToExclude)
 
 		output := strings.ToLower(*outputPrefix + typeName +
 			*outputSuffix + ".go")
@@ -168,34 +153,27 @@ func main() {
 	}
 }
 
-type TypeValue struct {
-	Name string
-	Str  string
-}
+func generateByTemplate(analysis interface{}, tmplsToExclude map[string]bool) []byte {
+	var buf bytes.Buffer
 
-func transformValues(typeName string, values []string) ([]TypeValue, error) {
-	if transformMethod == nil {
-		return nil, errors.New("transform method is not defined")
-	}
-
-	transform, ok := Trasformers[*transformMethod]
-	if !ok {
-		return nil, errors.New("invalid transform method")
-	}
-
-	var str string
-	res := make([]TypeValue, len(values))
-
-	for i := range values {
-		str = values[i]
-		if !*addTypePrefix {
-			str = strings.Replace(str, typeName, "", 1)
+	for _, t := range templateParts {
+		if _, ok := tmplsToExclude[t.Name]; ok {
+			continue
 		}
 
-		res[i] = TypeValue{
-			Name: values[i],
-			Str:  transform(str),
+		if err := t.Parsed.Execute(&buf, analysis); err != nil {
+			log.Fatalf("generating code: %v", err)
 		}
+
 	}
-	return res, nil
+	src, err := format.Source(buf.Bytes())
+	if err != nil {
+		// Should never happen, but can arise when developing this code.
+		// The user can compile the output to see the error.
+		log.Printf("warning: internal error: invalid Go generated: %s", err)
+		log.Printf("warning: compile the package to analyze the error")
+		src = buf.Bytes()
+	}
+
+	return src
 }

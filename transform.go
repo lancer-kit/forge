@@ -1,12 +1,18 @@
 package main
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/fatih/camelcase"
 )
 
-var Trasformers = map[string]func(string) string{
+type TypeValue struct {
+	Name string
+	Str  string
+}
+
+var transformers = map[string]func(string) string{
 	"snake": func(src string) string {
 		return transformString(src, "_")
 	},
@@ -32,4 +38,31 @@ func transformString(src, delim string) string {
 		result += delim + strings.ToLower(entries[i])
 	}
 	return result
+}
+
+func transformValues(typeName string, values []string) ([]TypeValue, error) {
+	if transformMethod == nil {
+		return nil, errors.New("transform method is not defined")
+	}
+
+	transform, ok := transformers[*transformMethod]
+	if !ok {
+		return nil, errors.New("invalid transform method")
+	}
+
+	var str string
+	res := make([]TypeValue, len(values))
+
+	for i := range values {
+		str = values[i]
+		if !*addTypePrefix {
+			str = strings.Replace(str, typeName, "", 1)
+		}
+
+		res[i] = TypeValue{
+			Name: values[i],
+			Str:  transform(str),
+		}
+	}
+	return res, nil
 }

@@ -60,8 +60,8 @@ func generateHandler(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("parse package: %v", err)
 	}
-
-	values, err := pkg.ValuesOfType(typ)
+	// todo: do not ignore tmpls list
+	values, _, err := pkg.ValuesOfType(typ)
 	if err != nil {
 		return fmt.Errorf("find values: %v", err)
 	}
