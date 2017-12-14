@@ -90,7 +90,7 @@ import (
 var (
 	typeNames       = flag.String("type", "", "comma-separated list of type names; must be set")
 	transformMethod = flag.String("transform", "none", "enum item Name transformation method. Default: none")
-	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values. Default: true")
+	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values or not. Default: true")
 	outputPrefix    = flag.String("prefix", "", "prefix to be added to the output file")
 	outputSuffix    = flag.String("suffix", "_jsonenums", "suffix to be added to the output file")
 )
@@ -115,6 +115,19 @@ func main() {
 			dir, err)
 	}
 
+	// need to remove already generated files for types
+	// this is need for correct search of predefined by user
+	// type vars and methods
+	for _, typeName := range types {
+		output := strings.ToLower(*outputPrefix + typeName +
+			*outputSuffix + ".go")
+		outputPath := filepath.Join(dir, output)
+
+		// Remove safe because we already check is path valid
+		// and don't care about is present file - we need to remove it.
+		os.Remove(outputPath)
+	}
+
 	pkg, err := parser.ParsePackage(dir)
 	if err != nil {
 		log.Fatalf("parsing package: %v", err)
@@ -137,6 +150,7 @@ func main() {
 			log.Fatalf("finding values for type %v: %v", typeName, err)
 		}
 
+		analysis.TypesAndValues = make(map[string][]TypeValue)
 		analysis.TypesAndValues[typeName], err = transformValues(typeName, values)
 		if err != nil {
 			log.Fatalf("generating code: %v", err)
@@ -155,17 +169,16 @@ func main() {
 
 func generateByTemplate(analysis interface{}, tmplsToExclude map[string]bool) []byte {
 	var buf bytes.Buffer
-
 	for _, t := range templateParts {
 		if _, ok := tmplsToExclude[t.Name]; ok {
 			continue
 		}
-
 		if err := t.Parsed.Execute(&buf, analysis); err != nil {
 			log.Fatalf("generating code: %v", err)
 		}
 
 	}
+
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
 		// Should never happen, but can arise when developing this code.
