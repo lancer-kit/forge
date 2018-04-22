@@ -31,6 +31,8 @@ var templateParts = []TemplatePart{
 	{Name: "Validate", Raw: validateTmplRaw},
 	{Name: "MarshalJSON", Raw: marshalJSONTmplRaw},
 	{Name: "UnmarshalJSON", Raw: unmarshalJSONTmplRaw},
+	{Name: "Value", Raw: rowValueTmplRaw},
+	{Name: "Scan", Raw: rowScanTmplRaw},
 }
 
 func (r *TemplatePart) parse() {
@@ -49,6 +51,7 @@ var (
 package {{.PackageName}}
 
 import (
+    "database/sql/driver"
     "encoding/json"
     "errors"
     "fmt"
@@ -58,6 +61,8 @@ func init() {
     // stub usage of json for situation when
     // (Un)MarshalJSON methods will be omitted
     _ = json.Delim('s')
+    
+    _ = driver.Bool
 }
 
 {{range $typename, $values := .TypesAndValues}}
@@ -133,7 +138,7 @@ func (r {{$typename}}) MarshalJSON() ([]byte, error) {
     }
     s, ok := _{{$typename}}ValueToName[r]
     if !ok {
-        return nil, fmt.Errorf("invalid {{$typename}}: %d", r)
+        return nil, fmt.Errorf("{{$typename}}(%d) is invalid value", r)
     }
     return json.Marshal(s)
 }
@@ -148,17 +153,48 @@ func (r {{$typename}}) MarshalJSON() ([]byte, error) {
 func (r *{{$typename}}) UnmarshalJSON(data []byte) error {
     var s string
     if err := json.Unmarshal(data, &s); err != nil {
-        return fmt.Errorf("{{$typename}} should be a string, got %s", data)
+        return fmt.Errorf("{{$typename}} should be a string, got %s", string(data))
     }
     v, ok := _{{$typename}}NameToValue[s]
     if !ok {
-        return fmt.Errorf("invalid {{$typename}} %q", s)
+        return fmt.Errorf("{{$typename}}(%q) is invalid value", s)
     }
     *r = v
     return nil
 }
 
 {{end}}
+`
 
+	rowValueTmplRaw = `
+{{range $typename, $values := .TypesAndValues}}
+
+// Value is generated so {{$typename}} satisfies db row driver.Valuer.
+func (r {{$typename}}) Value() (driver.Value, error) {
+	j, err := json.Marshal(r)
+	return j, err
+}
+{{end}}
+`
+	rowScanTmplRaw = `
+{{range $typename, $values := .TypesAndValues}}
+
+// Value is generated so {{$typename}} satisfies db row driver.Scanner.
+func (r *{{$typename}}) Scan(src interface{}) error {
+	source, ok := src.([]byte)
+	if !ok {
+		return errors.New("Type assertion .([]byte) failed.")
+	}
+
+	var i {{$typename}}
+	err := json.Unmarshal(source, &i)
+	if err != nil {
+		return errors.New("{{$typename}}: can't unmarshal column data")
+	}
+
+	*r = i
+	return nil
+}
+{{end}}
 `
 )

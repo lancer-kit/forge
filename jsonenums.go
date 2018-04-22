@@ -84,15 +84,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/campoy/jsonenums/parser"
+	"github.com/sheb-gregor/jsonenums/parser"
 )
 
 var (
 	typeNames       = flag.String("type", "", "comma-separated list of type names; must be set")
 	transformMethod = flag.String("transform", "none", "enum item Name transformation method. Default: none")
-	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values or not. Default: true")
-	outputPrefix    = flag.String("prefix", "", "prefix to be added to the output file")
-	outputSuffix    = flag.String("suffix", "_jsonenums", "suffix to be added to the output file")
+	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values or not. Default: false")
+	//forceRewritePrefix = flag.Bool("frw", false, "replace methods if they are implemented. Default: false")
+	outputPrefix = flag.String("prefix", "", "prefix to be added to the output file")
+	outputSuffix = flag.String("suffix", "_enums", "suffix to be added to the output file")
 )
 
 func main() {

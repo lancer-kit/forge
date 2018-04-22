@@ -46,6 +46,8 @@ var typeMethods = map[string]bool{
 	"Validate":      false,
 	"MarshalJSON":   false,
 	"UnmarshalJSON": true,
+	"Value":         false,
+	"Scan":          true,
 }
 
 // A Package contains all the information related to a parsed package.
