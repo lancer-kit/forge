@@ -13,6 +13,8 @@ func init() {
 	// (Un)MarshalJSON methods will be omitted
 	_ = json.Delim('s')
 
+	// stub usage of sql/driver for situation when
+	// Scan/Value methods will be omitted
 	_ = driver.Bool
 }
 
@@ -21,7 +23,7 @@ var ErrWeekDayInvalid = errors.New("WeekDay is invalid")
 func init() {
 	var v WeekDay
 	if _, ok := interface{}(v).(fmt.Stringer); ok {
-		_WeekDayNameToValue = map[string]WeekDay{
+		defWeekDayNameToValue = map[string]WeekDay{
 			interface{}(Monday).(fmt.Stringer).String():    Monday,
 			interface{}(Tuesday).(fmt.Stringer).String():   Tuesday,
 			interface{}(Wednesday).(fmt.Stringer).String(): Wednesday,
@@ -33,7 +35,7 @@ func init() {
 	}
 }
 
-var _WeekDayNameToValue = map[string]WeekDay{
+var defWeekDayNameToValue = map[string]WeekDay{
 	"Monday":    Monday,
 	"Tuesday":   Tuesday,
 	"Wednesday": Wednesday,
@@ -43,7 +45,7 @@ var _WeekDayNameToValue = map[string]WeekDay{
 	"Sunday":    Sunday,
 }
 
-var _WeekDayValueToName = map[WeekDay]string{
+var defWeekDayValueToName = map[WeekDay]string{
 	Monday:    "Monday",
 	Tuesday:   "Tuesday",
 	Wednesday: "Wednesday",
@@ -55,7 +57,7 @@ var _WeekDayValueToName = map[WeekDay]string{
 
 // Validate verifies that value is predefined for WeekDay.
 func (r WeekDay) Validate() error {
-	_, ok := _WeekDayValueToName[r]
+	_, ok := defWeekDayValueToName[r]
 	if !ok {
 		return ErrWeekDayInvalid
 	}
@@ -67,7 +69,7 @@ func (r WeekDay) MarshalJSON() ([]byte, error) {
 	if s, ok := interface{}(r).(fmt.Stringer); ok {
 		return json.Marshal(s.String())
 	}
-	s, ok := _WeekDayValueToName[r]
+	s, ok := defWeekDayValueToName[r]
 	if !ok {
 		return nil, fmt.Errorf("WeekDay(%d) is invalid value", r)
 	}
@@ -78,9 +80,9 @@ func (r WeekDay) MarshalJSON() ([]byte, error) {
 func (r *WeekDay) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("WeekDay should be a string, got %s", string(data))
+		return fmt.Errorf("WeekDay: should be a string, got %s", string(data))
 	}
-	v, ok := _WeekDayNameToValue[s]
+	v, ok := defWeekDayNameToValue[s]
 	if !ok {
 		return fmt.Errorf("WeekDay(%q) is invalid value", s)
 	}
@@ -98,7 +100,7 @@ func (r WeekDay) Value() (driver.Value, error) {
 func (r *WeekDay) Scan(src interface{}) error {
 	source, ok := src.([]byte)
 	if !ok {
-		return errors.New("Type assertion .([]byte) failed.")
+		return errors.New("WeekDay: typecast to []byte failed.")
 	}
 
 	var i WeekDay

@@ -13,6 +13,8 @@ func init() {
 	// (Un)MarshalJSON methods will be omitted
 	_ = json.Delim('s')
 
+	// stub usage of sql/driver for situation when
+	// Scan/Value methods will be omitted
 	_ = driver.Bool
 }
 
@@ -21,7 +23,7 @@ var ErrShirtSizeInvalid = errors.New("ShirtSize is invalid")
 func init() {
 	var v ShirtSize
 	if _, ok := interface{}(v).(fmt.Stringer); ok {
-		_ShirtSizeNameToValue = map[string]ShirtSize{
+		defShirtSizeNameToValue = map[string]ShirtSize{
 			interface{}(NA).(fmt.Stringer).String(): NA,
 			interface{}(XS).(fmt.Stringer).String(): XS,
 			interface{}(S).(fmt.Stringer).String():  S,
@@ -32,7 +34,7 @@ func init() {
 	}
 }
 
-var _ShirtSizeNameToValue = map[string]ShirtSize{
+var defShirtSizeNameToValue = map[string]ShirtSize{
 	"NA": NA,
 	"XS": XS,
 	"S":  S,
@@ -41,7 +43,7 @@ var _ShirtSizeNameToValue = map[string]ShirtSize{
 	"XL": XL,
 }
 
-var _ShirtSizeValueToName = map[ShirtSize]string{
+var defShirtSizeValueToName = map[ShirtSize]string{
 	NA: "NA",
 	XS: "XS",
 	S:  "S",
@@ -52,7 +54,7 @@ var _ShirtSizeValueToName = map[ShirtSize]string{
 
 // String is generated so ShirtSize satisfies fmt.Stringer.
 func (r ShirtSize) String() string {
-	s, ok := _ShirtSizeValueToName[r]
+	s, ok := defShirtSizeValueToName[r]
 	if !ok {
 		return fmt.Sprintf("ShirtSize(%d)", r)
 	}
@@ -61,7 +63,7 @@ func (r ShirtSize) String() string {
 
 // Validate verifies that value is predefined for ShirtSize.
 func (r ShirtSize) Validate() error {
-	_, ok := _ShirtSizeValueToName[r]
+	_, ok := defShirtSizeValueToName[r]
 	if !ok {
 		return ErrShirtSizeInvalid
 	}
@@ -73,7 +75,7 @@ func (r ShirtSize) MarshalJSON() ([]byte, error) {
 	if s, ok := interface{}(r).(fmt.Stringer); ok {
 		return json.Marshal(s.String())
 	}
-	s, ok := _ShirtSizeValueToName[r]
+	s, ok := defShirtSizeValueToName[r]
 	if !ok {
 		return nil, fmt.Errorf("ShirtSize(%d) is invalid value", r)
 	}
@@ -84,9 +86,9 @@ func (r ShirtSize) MarshalJSON() ([]byte, error) {
 func (r *ShirtSize) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("ShirtSize should be a string, got %s", string(data))
+		return fmt.Errorf("ShirtSize: should be a string, got %s", string(data))
 	}
-	v, ok := _ShirtSizeNameToValue[s]
+	v, ok := defShirtSizeNameToValue[s]
 	if !ok {
 		return fmt.Errorf("ShirtSize(%q) is invalid value", s)
 	}
@@ -104,7 +106,7 @@ func (r ShirtSize) Value() (driver.Value, error) {
 func (r *ShirtSize) Scan(src interface{}) error {
 	source, ok := src.([]byte)
 	if !ok {
-		return errors.New("Type assertion .([]byte) failed.")
+		return errors.New("ShirtSize: typecast to []byte failed.")
 	}
 
 	var i ShirtSize

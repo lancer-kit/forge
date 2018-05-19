@@ -17,13 +17,13 @@ package main
 
 import "text/template"
 
-type TemplatePart struct {
+type CodeTemplate struct {
 	Name   string
 	Raw    string
 	Parsed *template.Template
 }
 
-var templateParts = []TemplatePart{
+var templateParts = []CodeTemplate{
 	{Name: "base", Raw: baseTmplRaw},
 	{Name: "NameToValue", Raw: nameToValueTmplRaw},
 	{Name: "ValueToName", Raw: valueToNameTmplRaw},
@@ -35,7 +35,7 @@ var templateParts = []TemplatePart{
 	{Name: "Scan", Raw: rowScanTmplRaw},
 }
 
-func (r *TemplatePart) parse() {
+func (r *CodeTemplate) parse() {
 	r.Parsed = template.Must(template.New(r.Name).Parse(r.Raw))
 }
 
@@ -61,7 +61,9 @@ func init() {
     // stub usage of json for situation when
     // (Un)MarshalJSON methods will be omitted
     _ = json.Delim('s')
-    
+
+    // stub usage of sql/driver for situation when
+    // Scan/Value methods will be omitted
     _ = driver.Bool
 }
 
@@ -71,19 +73,18 @@ var Err{{$typename}}Invalid = errors.New("{{$typename}} is invalid")
 func init() {
     var v {{$typename}}
     if _, ok := interface{}(v).(fmt.Stringer); ok {
-        _{{$typename}}NameToValue = map[string]{{$typename}} {
+        def{{$typename}}NameToValue = map[string]{{$typename}} {
             {{range $values}}interface{}({{.Name}}).(fmt.Stringer).String(): {{.Name}},
             {{end}}
         }
     }
 }
 {{end}}
-
 `
 
 	nameToValueTmplRaw = `
 {{range $typename, $values := .TypesAndValues}}
-var _{{$typename}}NameToValue = map[string]{{$typename}} {
+var def{{$typename}}NameToValue = map[string]{{$typename}} {
         {{range $values}}"{{.Str}}": {{.Name}},
         {{end}}
     }
@@ -93,7 +94,7 @@ var _{{$typename}}NameToValue = map[string]{{$typename}} {
 
 	valueToNameTmplRaw = `
 {{range $typename, $values := .TypesAndValues}}
-var _{{$typename}}ValueToName = map[{{$typename}}]string {
+var def{{$typename}}ValueToName = map[{{$typename}}]string {
         {{range $values}}{{.Name}}: "{{.Str}}",
         {{end}}
     }
@@ -104,7 +105,7 @@ var _{{$typename}}ValueToName = map[{{$typename}}]string {
 {{range $typename, $values := .TypesAndValues}}
 // String is generated so {{$typename}} satisfies fmt.Stringer.
 func (r {{$typename}}) String() string {
-    s, ok := _{{$typename}}ValueToName[r]
+    s, ok := def{{$typename}}ValueToName[r]
     if !ok {
         return fmt.Sprintf("{{$typename}}(%d)", r)
     }
@@ -118,7 +119,7 @@ func (r {{$typename}}) String() string {
 {{range $typename, $values := .TypesAndValues}}
 // Validate verifies that value is predefined for {{$typename}}.
 func (r {{$typename}}) Validate() error {
-    _, ok := _{{$typename}}ValueToName[r]
+    _, ok := def{{$typename}}ValueToName[r]
     if !ok {
         return Err{{$typename}}Invalid
     }
@@ -136,7 +137,7 @@ func (r {{$typename}}) MarshalJSON() ([]byte, error) {
     if s, ok := interface{}(r).(fmt.Stringer); ok {
         return json.Marshal(s.String())
     }
-    s, ok := _{{$typename}}ValueToName[r]
+    s, ok := def{{$typename}}ValueToName[r]
     if !ok {
         return nil, fmt.Errorf("{{$typename}}(%d) is invalid value", r)
     }
@@ -153,9 +154,9 @@ func (r {{$typename}}) MarshalJSON() ([]byte, error) {
 func (r *{{$typename}}) UnmarshalJSON(data []byte) error {
     var s string
     if err := json.Unmarshal(data, &s); err != nil {
-        return fmt.Errorf("{{$typename}} should be a string, got %s", string(data))
+        return fmt.Errorf("{{$typename}}: should be a string, got %s", string(data))
     }
-    v, ok := _{{$typename}}NameToValue[s]
+    v, ok := def{{$typename}}NameToValue[s]
     if !ok {
         return fmt.Errorf("{{$typename}}(%q) is invalid value", s)
     }
@@ -183,7 +184,7 @@ func (r {{$typename}}) Value() (driver.Value, error) {
 func (r *{{$typename}}) Scan(src interface{}) error {
 	source, ok := src.([]byte)
 	if !ok {
-		return errors.New("Type assertion .([]byte) failed.")
+		return errors.New("{{$typename}}: typecast to []byte failed.")
 	}
 
 	var i {{$typename}}
