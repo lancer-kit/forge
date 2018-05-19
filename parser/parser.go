@@ -29,6 +29,27 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
+// typeVariables is slice of default variable for a type
+// which will be generated from template.
+var typeVariables = []string{
+	"NameToValue",
+	"ValueToName",
+}
+
+// typeMethods is a map of default methods for a type,
+// which will be generated from template:
+//    key - string name of the method,
+//    value - show is receiver should be pointer or not.
+// map [methodName]shouldBePointer
+var typeMethods = map[string]bool{
+	"String":        false,
+	"Validate":      false,
+	"MarshalJSON":   false,
+	"UnmarshalJSON": true,
+	"Value":         false,
+	"Scan":          true,
+}
+
 // A Package contains all the information related to a parsed package.
 type Package struct {
 	Name  string
@@ -60,35 +81,60 @@ func ParsePackage(directory string) (*Package, error) {
 	}, nil
 }
 
-// generate produces the String method for the named type.
-func (pkg *Package) ValuesOfType(typeName string) ([]string, error) {
+// ValuesOfType is inspect files for constant value, default variable and methods for type,
+// return a list of the constant values, and map of templates which must be ignored,
+// because they have already been declared.
+func (pkg *Package) ValuesOfType(typeName string) ([]string, map[string]bool, error) {
 	var values, inspectErrs []string
+	tmplsToExclude := map[string]bool{}
+
 	for _, file := range pkg.files {
 		ast.Inspect(file, func(node ast.Node) bool {
-			decl, ok := node.(*ast.GenDecl)
-			if !ok || decl.Tok != token.CONST {
-				// We only care about const declarations.
+			switch decl := node.(type) {
+			case *ast.GenDecl:
+				switch decl.Tok {
+				case token.CONST:
+					vs, err := pkg.constOfTypeIn(typeName, decl)
+					values = append(values, vs...)
+					if err != nil {
+						inspectErrs = append(inspectErrs, err.Error())
+					}
+
+				case token.VAR:
+					vs := pkg.varOfTypeIn(typeName, decl)
+					for k, v := range vs {
+						tmplsToExclude[k] = v
+					}
+				default:
+					return true
+				}
+
+			case *ast.FuncDecl:
+				vs := pkg.methodsOfTypeIn(typeName, decl)
+				for k, v := range vs {
+					tmplsToExclude[k] = v
+				}
+			default:
 				return true
 			}
 
-			if vs, err := pkg.valuesOfTypeIn(typeName, decl); err != nil {
-				inspectErrs = append(inspectErrs, err.Error())
-			} else {
-				values = append(values, vs...)
-			}
 			return false
 		})
 	}
+
 	if len(inspectErrs) > 0 {
-		return nil, fmt.Errorf("inspecting code:\n\t%v", strings.Join(inspectErrs, "\n\t"))
+		return nil, nil, fmt.Errorf("inspecting code:\n\t%v", strings.Join(inspectErrs, "\n\t"))
 	}
 	if len(values) == 0 {
-		return nil, fmt.Errorf("no values defined for type %s", typeName)
+		return nil, nil, fmt.Errorf("no values defined for type %s", typeName)
 	}
-	return values, nil
+
+	return values, tmplsToExclude, nil
 }
 
-func (pkg *Package) valuesOfTypeIn(typeName string, decl *ast.GenDecl) ([]string, error) {
+// constOfTypeIn checks if a constant values is declared
+// for the type and add it to the result list.
+func (pkg *Package) constOfTypeIn(typeName string, decl *ast.GenDecl) ([]string, error) {
 	var values []string
 
 	// The name of the type of the constants we are declaring.
@@ -145,4 +191,85 @@ func (pkg *Package) valuesOfTypeIn(typeName string, decl *ast.GenDecl) ([]string
 		}
 	}
 	return values, nil
+}
+
+// methodsOfTypeIn checks if a default methods is declared for the type,
+// if declared - add it to the ignore list, and the template for this
+// methods will NOT be added to the output file.
+func (pkg *Package) methodsOfTypeIn(typeName string, decl *ast.FuncDecl) map[string]bool {
+	if decl.Recv == nil || decl.Name == nil {
+		return nil
+	}
+
+	var isTypeMethod, isPointerReceiver bool
+	for _, field := range decl.Recv.List {
+		if field.Type == nil {
+			continue
+		}
+
+		var ok bool
+		var ident *ast.Ident
+
+		switch i := field.Type.(type) {
+		case *ast.StarExpr:
+			ident, ok = i.X.(*ast.Ident)
+			isPointerReceiver = true
+		case *ast.Ident:
+			ident, ok = i, true
+		}
+
+		if !ok {
+			continue
+		}
+
+		if ident.Name == typeName {
+			isTypeMethod = true
+		}
+
+	}
+
+	if !isTypeMethod {
+		return nil
+	}
+
+	tmpls := map[string]bool{}
+	for mName, shouldBePointer := range typeMethods {
+		if !strings.Contains(decl.Name.Name, mName) {
+			continue
+		}
+
+		if shouldBePointer == isPointerReceiver {
+			tmpls[mName] = true
+		}
+	}
+
+	return tmpls
+}
+
+// varOfTypeIn  checks if a default variable is declared for the type,
+// if declared - add it to the ignore list, and the template for this
+// variable will NOT be added to the output file.
+func (pkg *Package) varOfTypeIn(typeName string, decl *ast.GenDecl) map[string]bool {
+	tmpls := map[string]bool{}
+
+	for _, spec := range decl.Specs {
+		vspec, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			return tmpls
+		}
+
+		for _, name := range vspec.Names {
+			if name.Name == "_" {
+				continue
+			}
+
+			for _, v := range typeVariables {
+				if strings.Contains(name.Name, v) && strings.Contains(name.Name, typeName) {
+					tmpls[v] = true
+				}
+
+			}
+		}
+	}
+	return tmpls
 }

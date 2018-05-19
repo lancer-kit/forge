@@ -14,7 +14,7 @@
 // JSONenums is a tool to automate the creation of methods that satisfy the
 // fmt.Stringer, json.Marshaler and json.Unmarshaler interfaces.
 // Given the name of a (signed or unsigned) integer type T that has constants
-// defined, jsonenums will create a new self-contained Go source file implementing
+// defined, goplater will create a new self-contained Go source file implementing
 //
 //  func (t T) String() string
 //  func (t T) MarshalJSON() ([]byte, error)
@@ -42,7 +42,7 @@
 //
 // running this command
 //
-//	jsonenums -type=Pill
+//	goplater -type=Pill
 //
 // in the same directory will create the file pill_jsonenums.go, in package painkiller,
 // containing a definition of
@@ -57,7 +57,7 @@
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate jsonenums -type=Pill
+//	//go:generate goplater -type=Pill
 //
 // If multiple constants have the same value, the lexically first matching name will
 // be used (in the example, Acetaminophen will print as "Paracetamol").
@@ -84,13 +84,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/campoy/jsonenums/parser"
+	"github.com/sheb-gregor/goplater/parser"
 )
 
 var (
-	typeNames    = flag.String("type", "", "comma-separated list of type names; must be set")
+	typeNames       = flag.String("type", "", "comma-separated list of type names; must be set")
+	transformMethod = flag.String("transform", "none", "enum item Name transformation method. Default: none")
+	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values or not. Default: false")
+	//forceRewritePrefix = flag.Bool("frw", false, "replace methods if they are implemented. Default: false")
 	outputPrefix = flag.String("prefix", "", "prefix to be added to the output file")
-	outputSuffix = flag.String("suffix", "_jsonenums", "suffix to be added to the output file")
+	outputSuffix = flag.String("suffix", "_enums", "suffix to be added to the output file")
 )
 
 func main() {
@@ -113,6 +116,19 @@ func main() {
 			dir, err)
 	}
 
+	// need to remove already generated files for types
+	// this is need for correct search of predefined by user
+	// type vars and methods
+	for _, typeName := range types {
+		output := strings.ToLower(*outputPrefix + typeName +
+			*outputSuffix + ".go")
+		outputPath := filepath.Join(dir, output)
+
+		// Remove safe because we already check is path valid
+		// and don't care about is present file - we need to remove it.
+		os.Remove(outputPath)
+	}
+
 	pkg, err := parser.ParsePackage(dir)
 	if err != nil {
 		log.Fatalf("parsing package: %v", err)
@@ -121,34 +137,27 @@ func main() {
 	var analysis = struct {
 		Command        string
 		PackageName    string
-		TypesAndValues map[string][]string
+		TypesAndValues map[string][]TypeValue
 	}{
 		Command:        strings.Join(os.Args[1:], " "),
 		PackageName:    pkg.Name,
-		TypesAndValues: make(map[string][]string),
+		TypesAndValues: make(map[string][]TypeValue),
 	}
 
 	// Run generate for each type.
 	for _, typeName := range types {
-		values, err := pkg.ValuesOfType(typeName)
+		values, tmplsToExclude, err := pkg.ValuesOfType(typeName)
 		if err != nil {
 			log.Fatalf("finding values for type %v: %v", typeName, err)
 		}
-		analysis.TypesAndValues[typeName] = values
 
-		var buf bytes.Buffer
-		if err := generatedTmpl.Execute(&buf, analysis); err != nil {
+		analysis.TypesAndValues = make(map[string][]TypeValue)
+		analysis.TypesAndValues[typeName], err = transformValues(typeName, values)
+		if err != nil {
 			log.Fatalf("generating code: %v", err)
 		}
 
-		src, err := format.Source(buf.Bytes())
-		if err != nil {
-			// Should never happen, but can arise when developing this code.
-			// The user can compile the output to see the error.
-			log.Printf("warning: internal error: invalid Go generated: %s", err)
-			log.Printf("warning: compile the package to analyze the error")
-			src = buf.Bytes()
-		}
+		src := generateByTemplate(analysis, tmplsToExclude)
 
 		output := strings.ToLower(*outputPrefix + typeName +
 			*outputSuffix + ".go")
@@ -157,4 +166,28 @@ func main() {
 			log.Fatalf("writing output: %s", err)
 		}
 	}
+}
+
+func generateByTemplate(analysis interface{}, tmplsToExclude map[string]bool) []byte {
+	var buf bytes.Buffer
+	for _, t := range templateParts {
+		if _, ok := tmplsToExclude[t.Name]; ok {
+			continue
+		}
+		if err := t.Parsed.Execute(&buf, analysis); err != nil {
+			log.Fatalf("generating code: %v", err)
+		}
+
+	}
+
+	src, err := format.Source(buf.Bytes())
+	if err != nil {
+		// Should never happen, but can arise when developing this code.
+		// The user can compile the output to see the error.
+		log.Printf("warning: internal error: invalid Go generated: %s", err)
+		log.Printf("warning: compile the package to analyze the error")
+		src = buf.Bytes()
+	}
+
+	return src
 }
