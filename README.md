@@ -1,7 +1,11 @@
-# jsonenums
+# goplater
 
-jsonenums is a tool to automate the creation of methods that satisfy the
-`json.Marshaler` and `json.Unmarshaler` interfaces.
+**goplater** is a tool for automating the creation of methods that satisfy some built-in interfaces or those defined in the templates.
+
+##### OLD
+
+___
+
 Given the name of a (signed or unsigned) integer type T that has constants
 defined, jsonenums will create a new self-contained Go source file implementing
 
@@ -75,3 +79,7 @@ overridden with the `-suffix` flag and a prefix may be added with the `-prefix`
 flag.
 
 This is not an official Google product (experimental or otherwise), it is just code that happens to be owned by Google.
+
+# License
+
+This package is based on https://github.com/campoy/jsonenums.

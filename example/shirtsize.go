@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-//go:generate jsonenums -type=ShirtSize
+//go:generate goplater -type=ShirtSize
 
 type ShirtSize byte
 
@@ -34,7 +34,7 @@ const (
 	XL
 )
 
-//go:generate jsonenums -type=WeekDay
+//go:generate goplater -type=WeekDay
 
 type WeekDay int
 
