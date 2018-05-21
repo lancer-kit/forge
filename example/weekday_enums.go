@@ -2,6 +2,7 @@
 package main
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -16,6 +17,7 @@ func init() {
 	// stub usage of sql/driver for situation when
 	// Scan/Value methods will be omitted
 	_ = driver.Bool
+	_ = sql.LevelDefault
 }
 
 var ErrWeekDayInvalid = errors.New("WeekDay is invalid")
@@ -98,17 +100,33 @@ func (r WeekDay) Value() (driver.Value, error) {
 
 // Value is generated so WeekDay satisfies db row driver.Scanner.
 func (r *WeekDay) Scan(src interface{}) error {
-	source, ok := src.([]byte)
-	if !ok {
-		return errors.New("WeekDay: typecast to []byte failed.")
-	}
+	switch src.(type) {
+	case string:
+		val, ok := defWeekDayNameToValue[src.(string)]
+		if !ok {
+			return errors.New("WeekDay: can't unmarshal column data")
+		}
+		*r = val
+		return nil
+	case []byte:
+		source := src.([]byte)
+		var i WeekDay
+		err := json.Unmarshal(source, &i)
+		if err != nil {
+			return errors.New("WeekDay: can't unmarshal column data")
+		}
 
-	var i WeekDay
-	err := json.Unmarshal(source, &i)
-	if err != nil {
-		return errors.New("WeekDay: can't unmarshal column data")
-	}
+		*r = i
+		return nil
+	case int, int8, int32, int64, uint, uint8, uint32, uint64:
+		ni := sql.NullInt64{}
+		err := ni.Scan(src)
+		if err != nil {
+			return errors.New("WeekDay: can't scan column data into int64")
+		}
 
-	*r = i
-	return nil
+		*r = WeekDay(ni.Int64)
+		return nil
+	}
+	return errors.New("WeekDay: invalid type")
 }
