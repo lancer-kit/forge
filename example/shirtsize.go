@@ -48,25 +48,23 @@ const (
 	Sunday
 )
 
-func (d WeekDay) String() string {
-	switch d {
-	case Monday:
-		return "Dilluns"
-	case Tuesday:
-		return "Dimarts"
-	case Wednesday:
-		return "Dimecres"
-	case Thursday:
-		return "Dijous"
-	case Friday:
-		return "Divendres"
-	case Saturday:
-		return "Dissabte"
-	case Sunday:
-		return "Diumenge"
-	default:
-		return "invalid WeekDay"
-	}
+var defWeekDayValueToName = map[WeekDay]string{
+	Monday:    "Dilluns",
+	Tuesday:   "Dimarts",
+	Wednesday: "Dimecres",
+	Thursday:  "Dijous",
+	Friday:    "Divendres",
+	Saturday:  "Dissabte",
+	Sunday:    "Diumenge",
+}
+
+var defShirtSizeValueToName = map[ShirtSize]string{
+	NA: "NA",
+	XS: "XS",
+	S:  "S",
+	M:  "M",
+	L:  "L",
+	XL: "XL",
 }
 
 func main() {

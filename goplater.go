@@ -85,22 +85,30 @@ import (
 	"strings"
 
 	"github.com/sheb-gregor/goplater/parser"
+	"github.com/sheb-gregor/goplater/templates"
 )
 
 var (
-	typeNames       = flag.String("type", "", "comma-separated list of type names; must be set")
-	transformMethod = flag.String("transform", "none", "enum item Name transformation method. Default: none")
-	addTypePrefix   = flag.Bool("tprefix", true, "add type name prefix into string values or not. Default: false")
+	typeNames     = flag.String("type", "", "comma-separated list of type names; must be set")
+	transformRule = flag.String("transform", "none", "enum item Name transformation method. Default: none")
+	addTypePrefix = flag.Bool("tprefix", true, "add type name prefix into string values or not. Default: false")
 	//forceRewritePrefix = flag.Bool("frw", false, "replace methods if they are implemented. Default: false")
 	outputPrefix = flag.String("prefix", "", "prefix to be added to the output file")
 	outputSuffix = flag.String("suffix", "_enums", "suffix to be added to the output file")
 )
 
-func main() {
+func init() {
 	flag.Parse()
 	if len(*typeNames) == 0 {
 		log.Fatalf("the flag -type must be set")
 	}
+	if transformRule == nil {
+		log.Fatalf("transform method is not defined")
+		return
+	}
+}
+
+func main() {
 	types := strings.Split(*typeNames, ",")
 
 	// Only one directory at a time can be processed, and the default is ".".
@@ -132,6 +140,7 @@ func main() {
 	pkg, err := parser.ParsePackage(dir)
 	if err != nil {
 		log.Fatalf("parsing package: %v", err)
+		return
 	}
 
 	var analysis = struct {
@@ -144,6 +153,8 @@ func main() {
 		TypesAndValues: make(map[string][]TypeValue),
 	}
 
+	rule := TransformRule(*transformRule)
+
 	// Run generate for each type.
 	for _, typeName := range types {
 		values, tmplsToExclude, err := pkg.ValuesOfType(typeName)
@@ -152,10 +163,7 @@ func main() {
 		}
 
 		analysis.TypesAndValues = make(map[string][]TypeValue)
-		analysis.TypesAndValues[typeName], err = transformValues(typeName, values)
-		if err != nil {
-			log.Fatalf("generating code: %v", err)
-		}
+		analysis.TypesAndValues[typeName] = rule.TransformValues(typeName, values, *addTypePrefix)
 
 		src := generateByTemplate(analysis, tmplsToExclude)
 
@@ -170,7 +178,7 @@ func main() {
 
 func generateByTemplate(analysis interface{}, tmplsToExclude map[string]bool) []byte {
 	var buf bytes.Buffer
-	for _, t := range templateParts {
+	for _, t := range templates.Base {
 		if _, ok := tmplsToExclude[t.Name]; ok {
 			continue
 		}

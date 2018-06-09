@@ -11,9 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Added as a .go file to avoid embedding issues of the template.
-
-package main
+package templates
 
 import "text/template"
 
@@ -23,7 +21,7 @@ type CodeTemplate struct {
 	Parsed *template.Template
 }
 
-var templateParts = []CodeTemplate{
+var Base = []CodeTemplate{
 	{Name: "base", Raw: baseTmplRaw},
 	{Name: "NameToValue", Raw: nameToValueTmplRaw},
 	{Name: "ValueToName", Raw: valueToNameTmplRaw},
@@ -40,8 +38,8 @@ func (r *CodeTemplate) parse() {
 }
 
 func init() {
-	for i := range templateParts {
-		templateParts[i].parse()
+	for i := range Base {
+		Base[i].parse()
 	}
 }
 
@@ -71,16 +69,6 @@ func init() {
 
 {{range $typename, $values := .TypesAndValues}}
 var Err{{$typename}}Invalid = errors.New("{{$typename}} is invalid")
-
-func init() {
-    var v {{$typename}}
-    if _, ok := interface{}(v).(fmt.Stringer); ok {
-        def{{$typename}}NameToValue = map[string]{{$typename}} {
-            {{range $values}}interface{}({{.Name}}).(fmt.Stringer).String(): {{.Name}},
-            {{end}}
-        }
-    }
-}
 {{end}}
 `
 
@@ -179,23 +167,23 @@ func (r {{$typename}}) Value() (driver.Value, error) {
 }
 {{end}}
 `
+
 	rowScanTmplRaw = `
 {{range $typename, $values := .TypesAndValues}}
 
 // Value is generated so {{$typename}} satisfies db row driver.Scanner.
 func (r *{{$typename}}) Scan(src interface{}) error {
-    switch src.(type) {
+    switch v := src.(type) {
     case string:
-        val, ok := def{{$typename}}NameToValue[src.(string)]
+        val, ok := def{{$typename}}NameToValue[v]
         if !ok {
             return errors.New("{{$typename}}: can't unmarshal column data")
         }
         *r = val
         return nil
     case []byte:
-        source := src.([]byte)
         var i {{$typename}}
-        err := json.Unmarshal(source, &i)
+        err := json.Unmarshal(v, &i)
         if err != nil {
             return errors.New("{{$typename}}: can't unmarshal column data")
         }
@@ -204,7 +192,7 @@ func (r *{{$typename}}) Scan(src interface{}) error {
         return nil
     case int, int8, int32, int64, uint, uint8, uint32, uint64:
         ni := sql.NullInt64{}
-        err := ni.Scan(src)
+        err := ni.Scan(v)
         if err != nil {
             return errors.New("{{$typename}}: can't scan column data into int64")
         }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/fatih/camelcase"
@@ -12,22 +11,31 @@ type TypeValue struct {
 	Str  string
 }
 
-var transformers = map[string]func(string) string{
-	"snake": func(src string) string {
+type TransformRule string
+
+var (
+	TransformRuleSnake TransformRule = "snake"
+	TransformRuleKebab TransformRule = "kebab"
+	TransformRuleSpace TransformRule = "space"
+	TransformRuleNone  TransformRule = "none"
+)
+
+func (rule TransformRule) Transform(src string) string {
+	switch rule {
+	case TransformRuleSnake:
 		return transformString(src, "_")
-	},
-	"kebab": func(src string) string {
+	case TransformRuleKebab:
 		return transformString(src, "-")
-	},
-	"space": func(src string) string {
+	case TransformRuleSpace:
 		return transformString(src, " ")
-	},
-	"none": func(src string) string {
+	case TransformRuleNone:
 		return src
-	},
+	}
+
+	return src
 }
 
-func transformString(src, delim string) string {
+func transformString(src, delimiter string) string {
 	entries := camelcase.Split(src)
 	if len(entries) <= 1 {
 		return strings.ToLower(src)
@@ -35,34 +43,25 @@ func transformString(src, delim string) string {
 
 	result := strings.ToLower(entries[0])
 	for i := 1; i < len(entries); i++ {
-		result += delim + strings.ToLower(entries[i])
+		result += delimiter + strings.ToLower(entries[i])
 	}
 	return result
 }
 
-func transformValues(typeName string, values []string) ([]TypeValue, error) {
-	if transformMethod == nil {
-		return nil, errors.New("transform method is not defined")
-	}
-
-	transform, ok := transformers[*transformMethod]
-	if !ok {
-		return nil, errors.New("invalid transform method")
-	}
-
+func (rule TransformRule) TransformValues(typeName string, values []string, keepTPrefix bool) []TypeValue {
 	var str string
 	res := make([]TypeValue, len(values))
 
 	for i := range values {
 		str = values[i]
-		if !*addTypePrefix {
+		if !keepTPrefix {
 			str = strings.Replace(str, typeName, "", 1)
 		}
 
 		res[i] = TypeValue{
 			Name: values[i],
-			Str:  transform(str),
+			Str:  rule.Transform(str),
 		}
 	}
-	return res, nil
+	return res
 }
