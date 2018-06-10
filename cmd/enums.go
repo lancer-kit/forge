@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"errors"
@@ -19,55 +19,46 @@ import (
 )
 
 type enumsConfig struct {
-	types         []string
-	mergeSpecs    bool
+	baseConfig
 	transformRule string
 	addTypePrefix bool
-	outputSuffix  string
-	outputPrefix  string
 }
 
-var enumCmd = cli.Command{
+const (
+	transformFlag = "transform"
+	tprefixFlag   = "tprefix"
+)
+
+var EnumCmd = cli.Command{
 	Name:  "enum",
 	Usage: "generate var and methods for the iota-enums",
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  typesFlag,
-			Usage: "list of type names; must be set;",
-		},
+	Flags: append(baseFlags,
+
 		cli.StringFlag{
 			Name:  transformFlag,
 			Usage: "way to convert constants to a string;",
 			Value: "none",
 		},
-		cli.StringFlag{
-			Name:  prefixFlag,
-			Usage: "prefix to be added to the output file;",
-			Value: "enums_",
-		},
-		cli.StringFlag{
-			Name:  suffixFlag,
-			Usage: "suffix to be added to the output file;",
-			Value: "",
-		}, cli.BoolFlag{
-			Name:  mergeFlag,
-			Usage: "merge all output into one file;",
-		}, cli.BoolFlag{
+
+		cli.BoolFlag{
 			Name:  tprefixFlag,
 			Usage: "keep typename prefix in string values or not;",
 		},
-	},
+	),
 	Action: genEnums,
 }
 
 func genEnums(c *cli.Context) error {
 	config := enumsConfig{
-		types:         strings.Split(c.String(typesFlag), ","),
+		baseConfig: baseConfig{
+			types:        strings.Split(c.String(typesFlag), ","),
+			mergeSpecs:   c.Bool(mergeFlag),
+			outputPrefix: c.String(prefixFlag),
+			outputSuffix: c.String(suffixFlag),
+		},
+
 		transformRule: c.String(transformFlag),
-		mergeSpecs:    c.Bool(mergeFlag),
 		addTypePrefix: c.Bool(tprefixFlag),
-		outputPrefix:  c.String(prefixFlag),
-		outputSuffix:  c.String(suffixFlag),
 	}
 
 	// Only one directory at a time can be processed, and the default is ".".
@@ -112,7 +103,7 @@ func genEnums(c *cli.Context) error {
 		Types:       make(map[string]templates.TypeSpec),
 	}
 
-	rule := TransformRule(config.transformRule)
+	rule := templates.TransformRule(config.transformRule)
 
 	// Run generate for each type.
 	for _, typeName := range config.types {
@@ -151,7 +142,3 @@ func mergeTypeNames(names []string) string {
 	return strconv.FormatUint(uint64(crc32InUint32), 16)
 }
 
-func (config enumsConfig) getPath(name, dir string) string {
-	output := strings.ToLower(config.outputPrefix + name + config.outputSuffix + ".go")
-	return filepath.Join(dir, output)
-}

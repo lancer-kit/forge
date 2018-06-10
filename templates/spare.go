@@ -15,16 +15,16 @@ func init() {
 var (
 	nameToValueSpareRaw = `
 var def{{.TypeName}}NameToValue = map[string]{{.TypeName}} {
-        {{range .Values}}{{.Name}}.String(): {{.Name}},
-        {{end}}
-    }
+    {{range .Values}}{{.Name}}.String(): {{.Name}},
+    {{end}}
+}
 
 `
 
 	valueToNameSpareRaw = `
 var def{{.TypeName}}ValueToName = map[{{.TypeName}}]string {
-        {{range .Values}}{{.Name}}: {{.Name}}.String(),
-        {{end}}
-    }
+    {{range .Values}}{{.Name}}: {{.Name}}.String(),
+    {{end}}
+}
 `
 )

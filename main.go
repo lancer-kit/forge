@@ -3,16 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/sheb-gregor/goplater/cmd"
 	"github.com/urfave/cli"
-)
-
-const (
-	typesFlag     = "type"
-	transformFlag = "transform"
-	tprefixFlag   = "tprefix"
-	mergeFlag     = "merge"
-	suffixFlag    = "suffix"
-	prefixFlag    = "prefix"
 )
 
 func main() {
@@ -21,7 +13,8 @@ func main() {
 	app.Name = "goplater"
 	app.Usage = "auto generate, don't repeat"
 	app.Commands = cli.Commands{
-		enumCmd,
+		cmd.EnumCmd,
+		cmd.ModelCmd,
 	}
 
 	_ = app.Run(os.Args)

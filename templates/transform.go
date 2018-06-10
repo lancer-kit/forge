@@ -1,10 +1,9 @@
-package main
+package templates
 
 import (
 	"strings"
 
 	"github.com/fatih/camelcase"
-	"github.com/sheb-gregor/goplater/templates"
 )
 
 type TransformRule string
@@ -44,9 +43,9 @@ func transformString(src, delimiter string) string {
 	return result
 }
 
-func (rule TransformRule) TransformValues(typeName string, values []string, keepTPrefix bool) []templates.TypeValue {
+func (rule TransformRule) TransformValues(typeName string, values []string, keepTPrefix bool) []TypeValue {
 	var str string
-	res := make([]templates.TypeValue, len(values))
+	res := make([]TypeValue, len(values))
 
 	for i := range values {
 		str = values[i]
@@ -54,7 +53,7 @@ func (rule TransformRule) TransformValues(typeName string, values []string, keep
 			str = strings.Replace(str, typeName, "", 1)
 		}
 
-		res[i] = templates.TypeValue{
+		res[i] = TypeValue{
 			Name: values[i],
 			Str:  rule.Transform(str),
 		}

@@ -1,0 +1,79 @@
+
+
+type {{.Type}}Q struct {
+	*db.SQLConn
+	db.Table
+}
+
+func New{{.Type}}Q(conn *db.SQLConn) *{{.Type}}Q {
+	return &{{.Type}}Q{
+		SQLConn: conn.Clone(),
+		Table: db.Table{
+			Name:     "{{.Table}}",
+			QBuilder: sq.Select("*").From("{{.Table}}"),
+		},
+	}
+}
+
+func (q *{{.Type}}Q) Insert({{.TypeStr}} *{{.Type}}) error {
+	query := sq.Insert(q.Name).SetMap(map[string]interface{}{
+		{{range .Fields}}"{{.String}}": {{.Name}},
+		{{end}}
+		"admin":      invite.Admin,
+		"key":        invite.Key,
+		"status":     int64(invite.Status),
+		"policy":     int64(invite.Policy),
+		"created_at": time.Now().UTC().Unix(),
+		"updated_at": time.Now().UTC().Unix(),
+	})
+
+	var err error
+	_, err = q.SQLConn.Insert(query)
+	return err
+}
+
+func (q *{{.Type}}Q) ForAdmin(adminID int64) *{{.Type}}Q {
+	q.QBuilder = q.QBuilder.Where("admin = ?", adminID)
+	return q
+}
+
+// Select gets all records
+func (q *{{.Type}}Q) Select() ([]{{.Type}}, error) {
+	dest := make([]{{.Type}}, 0, 1)
+	q.ApplyPage("id")
+
+	err := q.SQLConn.Select(q.QBuilder, &dest)
+	if err == sql.ErrNoRows {
+		return dest, nil
+	}
+
+	return dest, err
+}
+
+func (q *{{.Type}}Q) ByID(id int64) (*{{.Type}}, error) {
+	dest := new({{.Type}})
+	err := q.SQLConn.Get(q.QBuilder.Where("id = ?", id), dest)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return dest, err
+}
+
+func (q *{{.Type}}Q) ByKey(key string) (*{{.Type}}, error) {
+	dest := new({{.Type}})
+	err := q.SQLConn.Get(q.QBuilder.Where("key = ?", key), dest)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return dest, err
+}
+
+func (q *{{.Type}}Q) UpdateStatus(id int64, status int64) error {
+	query := sq.Update(q.Name).
+		Set("status", status).
+		Set("updated_at", time.Now().UTC().Unix()).
+		Where("id = ?", id)
+
+	err := q.SQLConn.Exec(query)
+	return err
+}
