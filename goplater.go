@@ -75,13 +75,14 @@
 package main
 
 import (
-	"bytes"
 	"flag"
-	"go/format"
+	"hash/crc32"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/sheb-gregor/goplater/parser"
@@ -92,9 +93,10 @@ var (
 	typeNames     = flag.String("type", "", "comma-separated list of type names; must be set")
 	transformRule = flag.String("transform", "none", "enum item Name transformation method. Default: none")
 	addTypePrefix = flag.Bool("tprefix", true, "add type name prefix into string values or not. Default: false")
+	outputSuffix  = flag.String("suffix", "_enums", "suffix to be added to the output file")
+	mergeSpecs    = flag.Bool("merge", false, "merge all output into one file. Default: false")
+	//outputPrefix = flag.String("prefix", "", "prefix to be added to the output file")
 	//forceRewritePrefix = flag.Bool("frw", false, "replace methods if they are implemented. Default: false")
-	outputPrefix = flag.String("prefix", "", "prefix to be added to the output file")
-	outputSuffix = flag.String("suffix", "_enums", "suffix to be added to the output file")
 )
 
 func init() {
@@ -118,23 +120,28 @@ func main() {
 	} else if len(args) > 1 {
 		log.Fatalf("only one directory at a time")
 	}
+
 	dir, err := filepath.Abs(dir)
 	if err != nil {
 		log.Fatalf("unable to determine absolute filepath for requested path %s: %v",
 			dir, err)
 	}
 
+	if len(types) == 1 {
+		*mergeSpecs = false
+	}
+
 	// need to remove already generated files for types
 	// this is need for correct search of predefined by user
 	// type vars and methods
 	for _, typeName := range types {
-		output := strings.ToLower(*outputPrefix + typeName +
-			*outputSuffix + ".go")
-		outputPath := filepath.Join(dir, output)
-
 		// Remove safe because we already check is path valid
 		// and don't care about is present file - we need to remove it.
-		os.Remove(outputPath)
+		os.Remove(getPath(typeName, dir))
+	}
+
+	if *mergeSpecs {
+		os.Remove(getPath(mergeTypeNames(types), dir))
 	}
 
 	pkg, err := parser.ParsePackage(dir)
@@ -143,14 +150,10 @@ func main() {
 		return
 	}
 
-	var analysis = struct {
-		Command        string
-		PackageName    string
-		TypesAndValues map[string][]TypeValue
-	}{
-		Command:        strings.Join(os.Args[1:], " "),
-		PackageName:    pkg.Name,
-		TypesAndValues: make(map[string][]TypeValue),
+	var analysis = templates.Analysis{
+		Command:     strings.Join(os.Args[1:], " "),
+		PackageName: pkg.Name,
+		Types:       make(map[string]templates.TypeSpec),
 	}
 
 	rule := TransformRule(*transformRule)
@@ -161,41 +164,36 @@ func main() {
 		if err != nil {
 			log.Fatalf("finding values for type %v: %v", typeName, err)
 		}
+		analysis.Types[typeName] = templates.TypeSpec{
+			TypeName:    typeName,
+			Values:      rule.TransformValues(typeName, values, *addTypePrefix),
+			ExcludeList: tmplsToExclude,
+		}
+	}
 
-		analysis.TypesAndValues = make(map[string][]TypeValue)
-		analysis.TypesAndValues[typeName] = rule.TransformValues(typeName, values, *addTypePrefix)
+	for name, src := range analysis.GenerateByTemplate(*mergeSpecs) {
+		if *mergeSpecs {
+			name = mergeTypeNames(types)
+		}
 
-		src := generateByTemplate(analysis, tmplsToExclude)
-
-		output := strings.ToLower(*outputPrefix + typeName +
-			*outputSuffix + ".go")
-		outputPath := filepath.Join(dir, output)
-		if err := ioutil.WriteFile(outputPath, src, 0644); err != nil {
+		if err := ioutil.WriteFile(getPath(name, dir), src, 0644); err != nil {
 			log.Fatalf("writing output: %s", err)
+		}
+
+		if *mergeSpecs {
+			return
 		}
 	}
 }
 
-func generateByTemplate(analysis interface{}, tmplsToExclude map[string]bool) []byte {
-	var buf bytes.Buffer
-	for _, t := range templates.Base {
-		if _, ok := tmplsToExclude[t.Name]; ok {
-			continue
-		}
-		if err := t.Parsed.Execute(&buf, analysis); err != nil {
-			log.Fatalf("generating code: %v", err)
-		}
+func mergeTypeNames(names []string) string {
+	sort.Strings(names)
+	single := strings.Join(names, "_")
+	crc32InUint32 := crc32.ChecksumIEEE([]byte(single))
+	return strconv.FormatUint(uint64(crc32InUint32), 16)
+}
 
-	}
-
-	src, err := format.Source(buf.Bytes())
-	if err != nil {
-		// Should never happen, but can arise when developing this code.
-		// The user can compile the output to see the error.
-		log.Printf("warning: internal error: invalid Go generated: %s", err)
-		log.Printf("warning: compile the package to analyze the error")
-		src = buf.Bytes()
-	}
-
-	return src
+func getPath(name, dir string) string {
+	output := strings.ToLower(name + *outputSuffix + ".go")
+	return filepath.Join(dir, output)
 }
