@@ -1,13 +1,15 @@
 package cmd
 
 import (
-	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sheb-gregor/goplater/parser"
 	"github.com/sheb-gregor/goplater/templates"
 	"github.com/urfave/cli"
@@ -18,12 +20,27 @@ const tPath = "tmpl"
 var ModelCmd = cli.Command{
 	Name:  "model",
 	Usage: "generate code for structure by template",
-	Flags: append(baseFlags,
+	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  tPath,
 			Usage: "path to the templates; required;",
 		},
-	),
+		cli.StringFlag{
+			Name:  typesFlag,
+			Usage: "list of type names; required;",
+		},
+		cli.StringFlag{
+			Name:  prefixFlag,
+			Usage: "prefix to be added to the output file;",
+			Value: "",
+		},
+
+		cli.StringFlag{
+			Name:  suffixFlag,
+			Usage: "suffix to be added to the output file;",
+			Value: "",
+		},
+	},
 	Action: genModelAction,
 }
 
@@ -37,7 +54,6 @@ func genModelAction(c *cli.Context) error {
 		baseConfig: baseConfig{
 			types:        strings.Split(c.String(typesFlag), ","),
 			mergeSpecs:   c.Bool(mergeFlag),
-			outputPrefix: c.String(prefixFlag),
 			outputSuffix: c.String(suffixFlag),
 		},
 
@@ -71,19 +87,6 @@ func genModel(config stConfig) error {
 		config.mergeSpecs = false
 	}
 
-	file, err := os.Open(config.tPath)
-	if err != nil {
-		return fmt.Errorf("unable to open template file [%s]: %v",
-			config.tPath, err)
-	}
-	defer file.Close()
-	rawTemplate := make([]byte, 0)
-	_, err = file.Read(rawTemplate)
-	if err != nil {
-		return fmt.Errorf("unable to read template file [%s]: %v",
-			config.tPath, err)
-	}
-
 	// need to remove already generated files for types
 	// this is need for correct search of predefined by user
 	// type vars and methods
@@ -91,10 +94,6 @@ func genModel(config stConfig) error {
 		// Remove safe because we already check is path valid
 		// and don't care about is present file - we need to remove it.
 		os.Remove(config.getPath(typeName, dir))
-	}
-
-	if config.mergeSpecs {
-		os.Remove(config.getPath(mergeTypeNames(config.types), dir))
 	}
 
 	pkg, err := parser.ParsePackage(dir)
@@ -108,37 +107,30 @@ func genModel(config stConfig) error {
 		Types:       make(map[string]templates.TypeSpec),
 	}
 
+	tmpl, err := templates.OpenTemplate(config.tPath)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
 	// Run generate for each type.
 	for _, typeName := range config.types {
-		res, err := pkg.FindStructureSpec(typeName)
+		spec, err := pkg.FindStructureSpec(typeName)
 		if err != nil {
 			return fmt.Errorf("finding values for type %v: %v", typeName, err)
 		}
 
-		tmpl := templates.StructSpec{
-			Name: typeName,
-		}
-		for _, value := range res.Fields {
-			tmpl.Fields = append(tmpl.Fields, templates.Field{
-				Name: value,
-				Type: res.FTypes[value],
-				Tags: parseStructTags(res.Tags[value]),
-			})
+		model := templates.FigureOut(spec)
+		model.Package = pkg.Name
+
+		newRawFile, err := model.Exec(tmpl)
+		if err != nil {
+			log.Fatalf("exec template for type %v failed: %v", typeName, err)
 		}
 
-		fmt.Printf("%+v\n", res)
-		fmt.Printf("%+v\n", tmpl)
+		if err := ioutil.WriteFile(config.getPath(typeName, dir), []byte(newRawFile), 0644); err != nil {
+			log.Fatalf("writing output: %s", err)
+		}
 	}
 
 	return nil
-}
-
-func parseStructTags(tag string) map[string]string {
-	tag = strings.Trim(tag, "`")
-	tags := map[string]string{}
-	for _, fullTag := range strings.Split(tag, " ") {
-		tag := strings.Split(fullTag, ":")
-		tags[tag[0]] = strings.Trim(strings.Split(tag[1], ",")[0], `"`)
-	}
-	return tags
 }

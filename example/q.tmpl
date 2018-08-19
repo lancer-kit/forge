@@ -1,30 +1,35 @@
+package {{.Package}}
 
+import (
+	"database/sql"
 
-type {{.Type}}Q struct {
+	sq "github.com/Masterminds/squirrel"
+	"gitlab.inn4science.com/gophers/service-kit/db"
+)
+
+const table{{.TypeName}}s = "{{.TypeString}}s"
+
+type {{.TypeName}}Q struct {
 	*db.SQLConn
 	db.Table
 }
 
-func New{{.Type}}Q(conn *db.SQLConn) *{{.Type}}Q {
-	return &{{.Type}}Q{
+func New{{.TypeName}}Q(conn *db.SQLConn) *{{.TypeName}}Q {
+	return &{{.TypeName}}Q{
 		SQLConn: conn.Clone(),
 		Table: db.Table{
-			Name:     "{{.Table}}",
-			QBuilder: sq.Select("*").From("{{.Table}}"),
+			Name:     table{{.TypeName}}s,
+			QBuilder: sq.Select("*").From(table{{.TypeName}}s),
 		},
 	}
 }
 
-func (q *{{.Type}}Q) Insert({{.TypeStr}} *{{.Type}}) error {
+// Insert adds new  `{{.TypeName}}` record to `{{.TypeString}}s` table.
+func (q *{{.TypeName}}Q) Insert({{.TypeString}} *{{.TypeName}}) error {
 	query := sq.Insert(q.Name).SetMap(map[string]interface{}{
-		{{range .Fields}}"{{.String}}": {{.Name}},
+		{{ $self := . }}
+		{{range .Fields}}"{{.Tags.db}}":  {{$self.TypeString}}.{{.Name}},
 		{{end}}
-		"admin":      invite.Admin,
-		"key":        invite.Key,
-		"status":     int64(invite.Status),
-		"policy":     int64(invite.Policy),
-		"created_at": time.Now().UTC().Unix(),
-		"updated_at": time.Now().UTC().Unix(),
 	})
 
 	var err error
@@ -32,48 +37,88 @@ func (q *{{.Type}}Q) Insert({{.TypeStr}} *{{.Type}}) error {
 	return err
 }
 
-func (q *{{.Type}}Q) ForAdmin(adminID int64) *{{.Type}}Q {
-	q.QBuilder = q.QBuilder.Where("admin = ?", adminID)
+// Update updates row with passed `uid`.
+func (q *{{.TypeName}}Q) Update(uid string, {{.TypeString}} *{{.TypeName}}) error {
+  panic("fixme")
+	query := sq.Update(q.Name).SetMap(map[string]interface{}{
+	  {{ $self := . }}
+		{{range .Fields}}"{{.Name}}": {{$self.TypeString}}.{{.Name}},
+		{{end}}
+	}).Where("uid = ?", uid) //fixme: set correct rule
+	return q.SQLConn.Exec(query)
+}
+
+{{ $self := . }}
+{{range .Fields}}
+// With{{.Name}} adds filter by `{{.Name}}` column.
+func (q *{{$self.TypeName}}Q) With{{.Name}}({{.Name}} {{.FType}}) *{{$self.TypeName}}Q {
+	q.QBuilder = q.QBuilder.Where("{{.Name}} = ?", {{.Name}})
+	return q
+}
+{{end}}
+
+// Until sets lower time bound.
+func (q *{{.TypeName}}Q) Since(timestamp int64) *{{.TypeName}}Q {
+	q.QBuilder = q.QBuilder.Where("created_at >= ?", timestamp)
 	return q
 }
 
-// Select gets all records
-func (q *{{.Type}}Q) Select() ([]{{.Type}}, error) {
-	dest := make([]{{.Type}}, 0, 1)
+// Until sets upper time bound.
+func (q *{{.TypeName}}Q) Until(timestamp int64) *{{.TypeName}}Q {
+	q.QBuilder = q.QBuilder.Where("created_at <= ?", timestamp)
+	return q
+}
+
+// SetPage applies pagination parameters.
+func (q *{{.TypeName}}Q) SetPage(pq *db.PageQuery) *{{.TypeName}}Q {
+	q.Table.SetPage(pq)
+	q.WithCount()
+	return q
+}
+
+// Get returns first row of the result of query execution.
+func (q *{{.TypeName}}Q) Get() (*{{.TypeName}}, error) {
+	res := new({{.TypeName}})
 	q.ApplyPage("id")
 
-	err := q.SQLConn.Select(q.QBuilder, &dest)
+	err := q.SQLConn.Get(q.QBuilder, res)
 	if err == sql.ErrNoRows {
-		return dest, nil
+		return res, nil
 	}
 
-	return dest, err
+	return res, err
 }
 
-func (q *{{.Type}}Q) ByID(id int64) (*{{.Type}}, error) {
-	dest := new({{.Type}})
-	err := q.SQLConn.Get(q.QBuilder.Where("id = ?", id), dest)
+// Select returns all records.
+func (q *{{.TypeName}}Q) Select() ([]{{.TypeName}}, error) {
+	res := make([]{{.TypeName}}, 0, 1)
+	q.ApplyPage("id")
+
+	err := q.SQLConn.Select(q.QBuilder, &res)
+	if err == sql.ErrNoRows {
+		return res, nil
+	}
+
+	return res, err
+}
+
+//fixme: set correct getter
+func (q *{{.TypeName}}Q) ByID(id int64) (*{{.TypeName}}, error) {
+	res := new({{.TypeName}})
+	err := q.SQLConn.Get(q.QBuilder.Where("id = ?", id), res)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
-	return dest, err
+	return res, err
 }
 
-func (q *{{.Type}}Q) ByKey(key string) (*{{.Type}}, error) {
-	dest := new({{.Type}})
-	err := q.SQLConn.Get(q.QBuilder.Where("key = ?", key), dest)
+func (q *{{.TypeName}}Q) ByKey(key string) (*{{.TypeName}}, error) {
+  panic("fixme")
+  // fixme: set correct getter
+	res := new({{.TypeName}})
+	err := q.SQLConn.Get(q.QBuilder.Where("key = ?", key), res)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
-	return dest, err
-}
-
-func (q *{{.Type}}Q) UpdateStatus(id int64, status int64) error {
-	query := sq.Update(q.Name).
-		Set("status", status).
-		Set("updated_at", time.Now().UTC().Unix()).
-		Where("id = ?", id)
-
-	err := q.SQLConn.Exec(query)
-	return err
+	return res, err
 }

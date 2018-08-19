@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-//go:generate goplater -type=ShirtSize
+//go:generate goplater enum -type=ShirtSize
 
 type ShirtSize byte
 
@@ -34,12 +34,12 @@ const (
 	XL
 )
 
-//go:generate goplater -type=WeekDay
+//go:generate goplater enum -type=WeekDay
 
 type WeekDay int
 
 const (
-	Monday WeekDay = iota
+	Monday WeekDay = 1 + iota
 	Tuesday
 	Wednesday
 	Thursday
@@ -76,7 +76,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	input := `{"Size":"XL", "Day":"Dimarts"}`
+	input := `{"Size":"M", "Day":"Divendres"}`
 	if err := json.NewDecoder(strings.NewReader(input)).Decode(&v); err != nil {
 		log.Fatal(err)
 	}

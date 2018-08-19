@@ -20,8 +20,7 @@ func (r *CodeTemplate) parse() {
 type Analysis struct {
 	Command     string
 	PackageName string
-	//TypesAndValues map[string][]TypeValue
-	Types map[string]TypeSpec
+	Types       map[string]TypeSpec
 }
 
 type TypeSpec struct {

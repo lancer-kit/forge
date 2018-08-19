@@ -76,7 +76,6 @@ func init() {
 var Err{{.TypeName}}Invalid = errors.New("{{.TypeName}} is invalid")
 `
 	nameToValueRaw = `
-
 var def{{.TypeName}}NameToValue = map[string]{{.TypeName}} {
     {{range .Values}}"{{.Str}}": {{.Name}},
     {{end}}
@@ -144,8 +143,11 @@ func (r *{{.TypeName}}) UnmarshalJSON(data []byte) error {
 	rowValueRaw = `
 // Value is generated so {{.TypeName}} satisfies db row driver.Valuer.
 func (r {{.TypeName}}) Value() (driver.Value, error) {
-	j, err := json.Marshal(r)
-	return j, err
+    s, ok := def{{.TypeName}}ValueToName[r]
+    if !ok {
+        return nil, nil
+    }
+    return s, nil
 }
 `
 
@@ -154,10 +156,7 @@ func (r {{.TypeName}}) Value() (driver.Value, error) {
 func (r *{{.TypeName}}) Scan(src interface{}) error {
     switch v := src.(type) {
     case string:
-        val, ok := def{{.TypeName}}NameToValue[v]
-        if !ok {
-            return errors.New("{{.TypeName}}: can't unmarshal column data")
-        }
+        val, _ := def{{.TypeName}}NameToValue[v]
         *r = val
         return nil
     case []byte:
