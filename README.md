@@ -7,7 +7,7 @@
 **goplater** can be run from console in directory with target type or with help `go generate`:
 
 ```bash
-$ goplater -type=MyType
+$ goplater enum --type MyType
 ``` 
 
 Or
@@ -15,7 +15,7 @@ Or
 ``` go
 package main
 
-//go:generate goplater -type=MyType
+//go:generate goplater enum --type MyType
 type MyType int 
 
 const (
@@ -24,16 +24,96 @@ const (
 	MyTypeC
 )
 ```
+```bash
+$  ./goplater 
+NAME:
+   goplater - auto generate, dont repeat
+
+USAGE:
+   goplater [global options] command [command options] [arguments...]
+
+VERSION:
+   2.0
+
+COMMANDS:
+     enum     generate var and methods for the iota-enums
+     model    generate code for structure by template
+     help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h     show help
+   --version, -v  print the version
+
+```
+
+### Enum
+
+Command: `goplater enum`
+
+Implements predefined interfaces for a user-defined integer type with **iota**-constants.
+
+Interface list:
+  
+1. fmt.Stringer - `String() string`;
+2. json.Marshaler - `MarshalJSON() ([]byte, error)`;
+3. json.Unmarshaler - `UnmarshalJSON([]byte) error`;
+4. driver.Valuer - `Value() (Value, error)`;
+5. sql.Scanner - `Scan(src interface{}) error`;
+6. Validator - `Validate() error`.
+
+Predefined variables :
+
+- `var def<Type>ValueToName map[<Type>]string` - matching a constant and its string representation;
+- `var def<Type>NameToValue map[string]<Type>` - matching a string representation and constant; 
+- `var Err<Type>Invalid error` - error.
+
+All methods and maps can be pre-determined before generation, and at run they will be omitted.
 
 List of arguments:
 
-| Flag | Values | Description |
+| Flag | Type | Description |
 | ---- | ------ | ----------- |
 | type | string | The name of the target type or types for code generation |
 | transform | snake, kebab, space, none | A rule describing the strategy for converting constant names to a string. Default: none|
 | tprefix | true, false | add type name prefix into string values or not. Default: false |
 | prefix | string |  A prefix to be added to the output file |
 | suffix | string |  A suffix to be added to the output. Default: "_enums"|
+| merge | bool |  Merge all output into one file, if set `prefix` and `suffix` will be ignored. Default: false|
+
+Example
+```bash
+goplater enum --type ShirtSize,WeekDay --merge true
+```
+
+### Model 
+
+Command: `goplater model`
+
+Find the structure definition, analyze it and fill in the transposed template.
+
+
+Available fields for template:
+
+| Flag | Type | Description |
+| ---- | ------ | ----------- |
+| Package | string  | Name of package with type |
+| TypeName | string   | Type  name|
+| TypeString | string |  camelCased type name | 
+| Fields | []`Field` |  List of structure field definitions |
+| `Field`.Name | string | Name of filed |
+| `Field`.FType | string | Type of field |
+| `Field`.Tags | map[string]string | Field tags |
+
+
+List of arguments:
+
+| Flag | Type | Description |
+| ---- | ------ | ----------- |
+| tmpl | string  |   path to the templates; required |
+| type | string   |  list of type names; required |
+| prefix | string |  prefix to be added to the output file | 
+| suffix | string |  suffix to be added to the output file | 
+
 
 # ToDo
 
@@ -42,82 +122,6 @@ List of arguments:
 - [ ] Add bitmap types support
 - [ ] Add custom template support
 
-##### OLD
-___
-
-Given the name of a (signed or unsigned) integer type T that has constants
-defined, jsonenums will create a new self-contained Go source file implementing
-
-```
-func (t T) MarshalJSON() ([]byte, error)
-func (t *T) UnmarshalJSON([]byte) error
-```
-
-The file is created in the same package and directory as the package that
-defines T. It has helpful defaults designed for use with go generate.
-
-jsonenums is a simple implementation of a concept and the code might not be the
-most performant or beautiful to read.
-
-For example, given this snippet,
-
-```Go
-package painkiller
-
-type Pill int
-
-const (
-	Placebo Pill = iota
-	Aspirin
-	Ibuprofen
-	Paracetamol
-	Acetaminophen = Paracetamol
-)
-```
-
-running this command
-
-```
-jsonenums -type=Pill
-```
-
-in the same directory will create the file `pill_jsonenums.go`, in package
-`painkiller`, containing a definition of
-
-```
-func (r Pill) MarshalJSON() ([]byte, error)
-func (r *Pill) UnmarshalJSON([]byte) error
-```
-
-`MarshalJSON` will translate the value of a `Pill` constant to the `[]byte`
-representation of the respective constant name, so that the call
-`json.Marshal(painkiller.Aspirin)` will return the bytes `[]byte("\"Aspirin\"")`.
-
-`UnmarshalJSON` performs the opposite operation; given the `[]byte`
-representation of a `Pill` constant it will change the receiver to equal the
-corresponding constant. So given `[]byte("\"Aspirin\"")` the receiver will
-change to `Aspirin` and the returned error will be `nil`.
-
-Typically this process would be run using go generate, like this:
-
-```
-//go:generate jsonenums -type=Pill
-```
-
-If multiple constants have the same value, the lexically first matching name
-will be used (in the example, Acetaminophen will print as "Paracetamol").
-
-With no arguments, it processes the package in the current directory. Otherwise,
-the arguments must name a single directory holding a Go package or a set of Go
-source files that represent a single Go package.
-
-The `-type` flag accepts a comma-separated list of types so a single run can
-generate methods for multiple types. The default output file is t_jsonenums.go,
-where t is the lower-cased name of the first type listed. The suffix can be
-overridden with the `-suffix` flag and a prefix may be added with the `-prefix` 
-flag.
-
-This is not an official Google product (experimental or otherwise), it is just code that happens to be owned by Google.
 
 # License
 
