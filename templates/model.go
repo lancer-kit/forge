@@ -2,6 +2,7 @@ package templates
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -61,6 +62,20 @@ func parseTag(rawTag string) map[string]string {
 	rawTag = strings.Trim(rawTag, "`")
 	tags := map[string]string{}
 	for _, fullTag := range strings.Split(rawTag, " ") {
+		// minimal valid tag is `k:"v"`
+		// should contain
+		// k - key name
+		// : - separator
+		// " - double quotes
+		// v - value
+		// --> totally 5 chars
+		if len(fullTag) < 5 {
+			continue
+		}
+		fmt.Println(len(fullTag))
+		fullTag = strings.Trim(fullTag, " ")
+		fmt.Println(len(fullTag))
+		fmt.Println("d=======")
 		tag := strings.Split(fullTag, ":")
 		tags[tag[0]] = strings.Trim(strings.Split(tag[1], ",")[0], `"`)
 	}
