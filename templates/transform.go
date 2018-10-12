@@ -1,9 +1,8 @@
 package templates
 
 import (
-	"strings"
-
 	"github.com/fatih/camelcase"
+	"strings"
 )
 
 type TransformRule string

@@ -1,10 +1,9 @@
 package cmd
 
 import (
+	"github.com/urfave/cli"
 	"path/filepath"
 	"strings"
-
-	"github.com/urfave/cli"
 )
 
 const (

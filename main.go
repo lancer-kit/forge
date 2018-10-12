@@ -1,10 +1,9 @@
 package main
 
 import (
-	"os"
-
-	"github.com/sheb-gregor/goplater/cmd"
 	"github.com/urfave/cli"
+	"gitlab.inn4science.com/gophers/goplater/cmd"
+	"os"
 )
 
 func main() {
