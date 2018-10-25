@@ -2,9 +2,8 @@ package templates
 
 import (
 	"fmt"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 var testCases = []struct {

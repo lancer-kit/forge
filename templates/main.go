@@ -3,8 +3,8 @@ package templates
 import (
 	"bytes"
 	"go/format"
+	"html/template"
 	"log"
-	"text/template"
 )
 
 type CodeTemplate struct {

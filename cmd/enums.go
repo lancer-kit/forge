@@ -4,6 +4,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/urfave/cli"
+	"gitlab.inn4science.com/gophers/goplater/parser"
+	"gitlab.inn4science.com/gophers/goplater/templates"
 	"hash/crc32"
 	"io/ioutil"
 	"log"
@@ -12,10 +15,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/sheb-gregor/goplater/parser"
-	"github.com/sheb-gregor/goplater/templates"
-	"github.com/urfave/cli"
 )
 
 type enumsConfig struct {
@@ -141,4 +140,3 @@ func mergeTypeNames(names []string) string {
 	crc32InUint32 := crc32.ChecksumIEEE([]byte(single))
 	return strconv.FormatUint(uint64(crc32InUint32), 16)
 }
-

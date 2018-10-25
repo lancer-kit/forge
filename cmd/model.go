@@ -1,18 +1,17 @@
 package cmd
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"github.com/urfave/cli"
+	"gitlab.inn4science.com/gophers/goplater/parser"
+	"gitlab.inn4science.com/gophers/goplater/templates"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/pkg/errors"
-	"github.com/sheb-gregor/goplater/parser"
-	"github.com/sheb-gregor/goplater/templates"
-	"github.com/urfave/cli"
 )
 
 const tPath = "tmpl"
