@@ -9,7 +9,7 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Version = "2.1"
+	app.Version = "2.2"
 	app.Name = "goplater"
 	app.Usage = "don't repeat yourself — generate from template"
 	app.Commands = cli.Commands{
