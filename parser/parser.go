@@ -20,9 +20,10 @@ import (
 	"go/ast"
 	"go/build"
 	"go/types"
-	"golang.org/x/tools/go/loader"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/tools/go/loader"
 )
 
 // typeVariables is slice of default variable for a type

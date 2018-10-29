@@ -40,14 +40,13 @@ var base = map[string]CodeTemplate{
 	"Scan":          {Name: "Scan", Raw: rowScanRaw},
 }
 
-//
-//func init() {
-//	FileBase.parse()
-//
-//	for i := range EnumBase {
-//		EnumBase[i].parse()
-//	}
-//}
+func init() {
+	FileBase.parse()
+
+	for i := range EnumBase {
+		EnumBase[i].parse()
+	}
+}
 
 var (
 	baseRaw = `

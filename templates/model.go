@@ -3,10 +3,11 @@ package templates
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
-	"gitlab.inn4science.com/gophers/goplater/parser"
 	"html/template"
 	"strings"
+
+	"github.com/pkg/errors"
+	"gitlab.inn4science.com/gophers/goplater/parser"
 )
 
 type ModelSpec struct {
