@@ -1,4 +1,4 @@
-module github.com/sheb-gregor/goplater
+module gitlab.inn4science.com/gophers/goplater
 
 require (
 	github.com/fatih/camelcase v0.0.0-20171027104257-44e46d280b43
