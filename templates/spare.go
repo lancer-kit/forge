@@ -5,13 +5,6 @@ var Spare = map[string]CodeTemplate{
 	"ValueToName": {Name: "ValueToName", Raw: valueToNameSpareRaw},
 }
 
-func init() {
-	for i, t := range Spare {
-		t.parse()
-		Spare[i] = t
-	}
-}
-
 var (
 	nameToValueSpareRaw = `
 var def{{.TypeName}}NameToValue = map[string]{{.TypeName}} {
@@ -28,3 +21,10 @@ var def{{.TypeName}}ValueToName = map[{{.TypeName}}]string {
 }
 `
 )
+
+func init() {
+	for i, t := range Spare {
+		t.parse()
+		Spare[i] = t
+	}
+}

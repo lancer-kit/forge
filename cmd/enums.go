@@ -4,9 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/urfave/cli"
-	"gitlab.inn4science.com/gophers/goplater/parser"
-	"gitlab.inn4science.com/gophers/goplater/templates"
 	"hash/crc32"
 	"io/ioutil"
 	"log"
@@ -15,6 +12,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/urfave/cli"
+	"gitlab.inn4science.com/gophers/goplater/parser"
+	"gitlab.inn4science.com/gophers/goplater/templates"
 )
 
 type enumsConfig struct {

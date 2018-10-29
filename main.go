@@ -1,16 +1,17 @@
 package main
 
 import (
+	"os"
+
 	"github.com/urfave/cli"
 	"gitlab.inn4science.com/gophers/goplater/cmd"
-	"os"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Version = "2.0"
+	app.Version = "2.1"
 	app.Name = "goplater"
-	app.Usage = "auto generate, don't repeat"
+	app.Usage = "don't repeat yourself — generate from template"
 	app.Commands = cli.Commands{
 		cmd.EnumCmd,
 		cmd.ModelCmd,
