@@ -2,7 +2,6 @@ package templates
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"strings"
 
@@ -72,10 +71,10 @@ func parseTag(rawTag string) map[string]string {
 		if len(fullTag) < 5 {
 			continue
 		}
-		fmt.Println(len(fullTag))
+		//fmt.Println(len(fullTag))
 		fullTag = strings.Trim(fullTag, " ")
-		fmt.Println(len(fullTag))
-		fmt.Println("d=======")
+		//fmt.Println(len(fullTag))
+		//fmt.Println("d=======")
 		tag := strings.Split(fullTag, ":")
 		tags[tag[0]] = strings.Trim(strings.Split(tag[1], ",")[0], `"`)
 	}
