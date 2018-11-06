@@ -139,6 +139,5 @@ func mergeTypeNames(names []string) string {
 	sort.Strings(names)
 	single := strings.Join(names, "_")
 	crc32InUint32 := crc32.ChecksumIEEE([]byte(single))
-	fmt.Printf("NAMES :: %+v SINGLE %+v CRC32 :: %+v", names, single, strconv.FormatUint(uint64(crc32InUint32), 16))
 	return strconv.FormatUint(uint64(crc32InUint32), 16)
 }
