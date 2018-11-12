@@ -3,6 +3,7 @@ package cmd
 import (
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"github.com/urfave/cli"
 )
@@ -22,7 +23,19 @@ type baseConfig struct {
 }
 
 func (config baseConfig) getPath(name, dir string) string {
-	output := strings.ToLower(config.outputPrefix + name + config.outputSuffix + ".go")
+	var splittedName string
+	for i, r := range name {
+		if i == 0 {
+			splittedName += string(r)
+			continue
+		}
+		if unicode.IsUpper(r) {
+			splittedName += "_" + string(r)
+			continue
+		}
+		splittedName += string(r)
+	}
+	output := strings.ToLower(config.outputPrefix + splittedName + config.outputSuffix + ".go")
 	return filepath.Join(dir, output)
 }
 
