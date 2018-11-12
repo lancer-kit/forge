@@ -110,3 +110,24 @@ func TestTransformRule_Transform(t *testing.T) {
 		}
 	}
 }
+
+func TestTransformRule_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		rule    TransformRule
+		wantErr bool
+	}{
+		{name: "valid:snake", rule: TransformRuleSnake, wantErr: false},
+		{name: "valid:kebab", rule: TransformRuleKebab, wantErr: false},
+		{name: "valid:space", rule: TransformRuleSpace, wantErr: false},
+		{name: "valid:none", rule: TransformRuleNone, wantErr: false},
+		{name: "invalid", rule: "test_value", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.rule.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("TransformRule.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
