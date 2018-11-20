@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -74,17 +75,21 @@ func (config *ModelConfig) Validate() error {
 func genModelAction(c *cli.Context) error {
 	config := ModelConfig{}.FromContext(c)
 	if err := config.Validate(); err != nil {
-		return cli.NewExitError("ERROR: "+err.Error(), 1)
+		return cli.NewExitError("[ERROR] "+err.Error(), 1)
 	}
 
 	err := genModel(config)
 	if err != nil {
-		return cli.NewExitError("ERROR: "+err.Error(), 1)
+		return cli.NewExitError("[ERROR] "+err.Error(), 1)
 	}
 
 	return nil
 }
 
+// todo: refactor
+// 1. Analyze model(s)
+// 2. Gen by template
+// 3. Write file
 func genModel(config ModelConfig) error {
 	// Only one directory at a time can be processed, and the default is ".".
 	dir := "."
@@ -129,7 +134,7 @@ func genModel(config ModelConfig) error {
 			return fmt.Errorf("finding values for type %v: %s", typeName, err.Error())
 		}
 		if spec == nil {
-			fmt.Printf("WARN: definition of the type %s isn't found, skip it. \n", typeName)
+			log.Printf("[WARN] definition of the type %s isn't found, skip it. \n", typeName)
 			continue
 		}
 
