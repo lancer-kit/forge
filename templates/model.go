@@ -3,6 +3,7 @@ package templates
 import (
 	"bytes"
 	"html/template"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -24,6 +25,7 @@ type Field struct {
 
 func (spec *ModelSpec) Exec(tmpl *template.Template) (string, error) {
 	var buf bytes.Buffer
+
 	err := tmpl.Execute(&buf, spec)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to execute template")
@@ -39,7 +41,7 @@ func OpenTemplate(templatePath string) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func FigureOut(spec *parser.StructureSpec) *ModelSpec {
+func FigureOut(spec *parser.StructureSpec) (_ *ModelSpec, err error) {
 	result := strings.ToLower(spec.Name[:1])
 	result += spec.Name[1:]
 
@@ -47,36 +49,104 @@ func FigureOut(spec *parser.StructureSpec) *ModelSpec {
 		TypeName:   spec.Name,
 		TypeString: result,
 	}
+
+	var tagsKV map[string]string
 	for _, fieldName := range spec.Fields {
+		tagsKV, err = parseTag(spec.Tags[fieldName])
+		if err != nil {
+			return nil, err
+		}
 		s.Fields = append(s.Fields, Field{
 			Name:  fieldName,
 			FType: spec.FTypes[fieldName],
-			Tags:  parseTag(spec.Tags[fieldName]),
+			Tags:  tagsKV,
 		})
 	}
-	return &s
+
+	return &s, nil
 }
 
-func parseTag(rawTag string) map[string]string {
-	rawTag = strings.Trim(rawTag, "`")
+func parseTag(rawTag string) (map[string]string, error) {
+	tags, err := parseRawTags(rawTag)
+	if err != nil {
+		return nil, err
+	}
+	if len(tags) == 0 {
+		return nil, errors.New("No tags")
+	}
+
+	tags = sanitizeTags(tags)
+	return tags, nil
+}
+
+func parseRawTags(tag string) (map[string]string, error) {
 	tags := map[string]string{}
-	for _, fullTag := range strings.Split(rawTag, " ") {
-		// minimal valid tag is `k:"v"`
-		// should contain
-		// k - key name
-		// : - separator
-		// " - double quotes
-		// v - value
-		// --> totally 5 chars
-		if len(fullTag) < 5 {
+
+	// remove leading and trailing backtick
+	tag = strings.Trim(tag, "`")
+	const kvSeparator = ':'
+	const quote = '"'
+	const whitespace = ' '
+
+	var keyFound bool
+	var keyStart, valueStart int
+	var key string
+
+	//todo: add comments
+	for i := range tag {
+		if keyFound && valueStart == i {
 			continue
 		}
-		//fmt.Println(len(fullTag))
-		fullTag = strings.Trim(fullTag, " ")
-		//fmt.Println(len(fullTag))
-		//fmt.Println("d=======")
-		tag := strings.Split(fullTag, ":")
-		tags[tag[0]] = strings.Trim(strings.Split(tag[1], ",")[0], `"`)
+
+		s := tag[i]
+		if i < 1 && s == kvSeparator {
+			// separator can not be in first position
+			return nil, errors.New("invalid tag")
+		}
+
+		if !keyFound && s == kvSeparator {
+			if tag[i+1] != quote {
+				return nil, errors.New("invalid tag")
+			}
+			key = tag[keyStart:i]
+			invalid, _ := regexp.MatchString("([^a-zA-Z0-9_]+)", key)
+			if invalid {
+				return nil, errors.New("invalid key")
+			}
+			valueStart = i + 1
+			keyFound = true
+			continue
+		}
+
+		if keyFound && tag[i] == quote {
+			if i+1 < len(tag) && tag[i+1] != whitespace {
+				return nil, errors.New("invalid tag")
+			}
+			// remove leading and trailing double quotes, if exist
+			tags[key] = strings.Trim(tag[valueStart:i], `"`)
+			keyStart = i + 2
+			keyFound = false
+			continue
+		}
+
+	}
+	return tags, nil
+}
+
+func sanitizeTags(tags map[string]string) map[string]string {
+	for key, value := range tags {
+		// remove leading and trailing double quotes, if exist
+		value = strings.Trim(value, `"`)
+		// tags can have not only values, but also optional parameters,
+		// such as 'omitempty' for JSON, separated by comma;
+		// therefore, we divide the value by comma and take only the first value
+		value = strings.Split(value, ",")[0]
+		// special case for hidden fields
+		if value == "-" {
+			delete(tags, key)
+			continue
+		}
+		tags[key] = value
 	}
 	return tags
 }

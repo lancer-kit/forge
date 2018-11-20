@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"hash/crc32"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,16 +16,35 @@ import (
 	"gitlab.inn4science.com/gophers/goplater/templates"
 )
 
-type enumsConfig struct {
-	baseConfig
-	transformRule string
-	addTypePrefix bool
-}
-
 const (
 	transformFlag = "transform"
 	tprefixFlag   = "tprefix"
 )
+
+type EnumsConfig struct {
+	BaseConfig
+	transformRule templates.TransformRule
+	addTypePrefix bool
+}
+
+func (EnumsConfig) FromContext(c *cli.Context) EnumsConfig {
+	return EnumsConfig{
+		BaseConfig:    BaseConfig{}.FromContext(c),
+		transformRule: templates.TransformRule(c.String(transformFlag)),
+		addTypePrefix: c.Bool(tprefixFlag),
+	}
+}
+
+func (config *EnumsConfig) Validate() error {
+	if err := config.BaseConfig.Validate(); err != nil {
+		return err
+	}
+	if err := config.transformRule.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 var EnumCmd = cli.Command{
 	Name:  "enum",
@@ -45,34 +62,29 @@ var EnumCmd = cli.Command{
 			Usage: "keep typename prefix in string values or not;",
 		},
 	),
-	Action: genEnums,
+	Action: func(c *cli.Context) error {
+		config := EnumsConfig{}.FromContext(c)
+		err := config.Validate()
+		if err != nil {
+			return cli.NewExitError("ERROR: "+err.Error(), 1)
+		}
+		err = genEnums(config)
+		if err != nil {
+			return cli.NewExitError("ERROR: "+err.Error(), 1)
+		}
+		return nil
+	},
 }
 
-func genEnums(c *cli.Context) error {
-	config := enumsConfig{
-		baseConfig: baseConfig{
-			types:        strings.Split(c.String(typesFlag), ","),
-			mergeSpecs:   c.Bool(mergeFlag),
-			outputPrefix: c.String(prefixFlag),
-			outputSuffix: c.String(suffixFlag),
-		},
-
-		transformRule: c.String(transformFlag),
-		addTypePrefix: c.Bool(tprefixFlag),
-	}
-
+func genEnums(config EnumsConfig) error {
 	// Only one directory at a time can be processed, and the default is ".".
 	dir := "."
-	if args := flag.Args(); len(args) == 1 {
+	if args := flag.Args(); len(args) >= 1 {
 		dir = args[0]
-	} else if len(args) > 1 {
-		return errors.New("only one directory at a time")
 	}
-
 	dir, err := filepath.Abs(dir)
 	if err != nil {
-		return fmt.Errorf("unable to determine absolute filepath for requested path %s: %v",
-			dir, err)
+		return fmt.Errorf("unable to determine absolute filepath for requested path %s: %v", dir, err)
 	}
 
 	if len(config.types) == 1 {
@@ -85,11 +97,11 @@ func genEnums(c *cli.Context) error {
 	for _, typeName := range config.types {
 		// Remove safe because we already check is path valid
 		// and don't care about is present file - we need to remove it.
-		os.Remove(config.getPath(typeName, dir))
+		os.Remove(config.GetPath(typeName, dir))
 	}
 
 	if config.mergeSpecs {
-		os.Remove(config.getPath(mergeTypeNames(config.types), dir))
+		os.Remove(config.GetPath(mergeTypeNames(config.types), dir))
 	}
 
 	pkg, err := parser.ParsePackage(dir)
@@ -123,8 +135,8 @@ func genEnums(c *cli.Context) error {
 			name = mergeTypeNames(config.types)
 		}
 
-		if err := ioutil.WriteFile(config.getPath(name, dir), src, 0644); err != nil {
-			log.Fatalf("writing output: %s", err)
+		if err := ioutil.WriteFile(config.GetPath(name, dir), src, 0644); err != nil {
+			return fmt.Errorf("writing output: %s", err)
 		}
 
 		if config.mergeSpecs {

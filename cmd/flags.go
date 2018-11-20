@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -15,15 +16,36 @@ const (
 	prefixFlag = "prefix"
 )
 
-type baseConfig struct {
+type BaseConfig struct {
 	types        []string
 	mergeSpecs   bool
 	outputSuffix string
 	outputPrefix string
 }
 
-func (config baseConfig) getPath(name, dir string) string {
+func (BaseConfig) FromContext(c *cli.Context) BaseConfig {
+	return BaseConfig{
+		types:        strings.Split(c.String(typesFlag), ","),
+		mergeSpecs:   c.Bool(mergeFlag),
+		outputPrefix: c.String(prefixFlag),
+		outputSuffix: c.String(suffixFlag),
+	}
+}
+
+func (config *BaseConfig) Validate() error {
+	if len(config.types) == 0 {
+		return fmt.Errorf("%s: should not be empty", typesFlag)
+	}
+	if config.outputPrefix == "" && config.outputSuffix == "" {
+		return fmt.Errorf("%s or %s: should be passed", suffixFlag, prefixFlag)
+	}
+
+	return nil
+}
+
+func (config BaseConfig) GetPath(name, dir string) string {
 	var splittedName string
+
 	for i, r := range name {
 		if i == 0 {
 			splittedName += string(r)
@@ -35,7 +57,9 @@ func (config baseConfig) getPath(name, dir string) string {
 		}
 		splittedName += string(r)
 	}
+
 	output := strings.ToLower(config.outputPrefix + splittedName + config.outputSuffix + ".go")
+
 	return filepath.Join(dir, output)
 }
 

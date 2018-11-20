@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli"
 	"gitlab.inn4science.com/gophers/goplater/parser"
@@ -44,37 +42,60 @@ var ModelCmd = cli.Command{
 	Action: genModelAction,
 }
 
-type stConfig struct {
-	baseConfig
+type ModelConfig struct {
+	BaseConfig
 	tPath string
 }
 
-func genModelAction(c *cli.Context) error {
-	config := stConfig{
-		baseConfig: baseConfig{
-			types:        strings.Split(c.String(typesFlag), ","),
-			mergeSpecs:   c.Bool(mergeFlag),
-			outputSuffix: c.String(suffixFlag),
-		},
-
-		tPath: c.String(tPath),
+func (ModelConfig) FromContext(c *cli.Context) ModelConfig {
+	return ModelConfig{
+		BaseConfig: BaseConfig{}.FromContext(c),
+		tPath:      c.String(tPath),
 	}
+}
+
+func (config *ModelConfig) Validate() error {
+	if err := config.BaseConfig.Validate(); err != nil {
+		return err
+	}
+	if config.tPath == "" {
+		return fmt.Errorf("%s: must be specified", tPath)
+	}
+
+	_, err := os.Stat(config.tPath)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("%s: file is not exist", tPath)
+	}
+	if err != nil {
+		return fmt.Errorf("%s: %s", tPath, err.Error())
+	}
+	return nil
+}
+
+func genModelAction(c *cli.Context) error {
+	config := ModelConfig{}.FromContext(c)
+	if err := config.Validate(); err != nil {
+		return cli.NewExitError("[ERROR] "+err.Error(), 1)
+	}
+
 	err := genModel(config)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
+		return cli.NewExitError("[ERROR] "+err.Error(), 1)
 	}
 
 	return nil
 }
 
-func genModel(config stConfig) error {
-
+// todo: refactor
+// 1. Analyze model(s)
+// 2. Gen by template
+// 3. Write file
+func genModel(config ModelConfig) error {
 	// Only one directory at a time can be processed, and the default is ".".
 	dir := "."
-	if args := flag.Args(); len(args) == 1 {
+
+	if args := flag.Args(); len(args) >= 1 {
 		dir = args[0]
-	} else if len(args) > 1 {
-		return errors.New("only one directory at a time")
 	}
 
 	dir, err := filepath.Abs(dir)
@@ -93,7 +114,7 @@ func genModel(config stConfig) error {
 	for _, typeName := range config.types {
 		// Remove safe because we already check is path valid
 		// and don't care about is present file - we need to remove it.
-		os.Remove(config.getPath(typeName, dir))
+		os.Remove(config.GetPath(typeName, dir))
 	}
 
 	pkg, err := parser.ParsePackage(dir)
@@ -101,34 +122,35 @@ func genModel(config stConfig) error {
 		return fmt.Errorf("parsing package: %v", err)
 	}
 
-	_ = templates.Analysis{
-		Command:     strings.Join(os.Args[1:], " "),
-		PackageName: pkg.Name,
-		Types:       make(map[string]templates.TypeSpec),
-	}
-
 	tmpl, err := templates.OpenTemplate(config.tPath)
 	if err != nil {
-		log.Fatalf(err.Error())
+		return fmt.Errorf("unable to open template: %s", err.Error())
 	}
 
 	// Run generate for each type.
 	for _, typeName := range config.types {
 		spec, err := pkg.FindStructureSpec(typeName)
 		if err != nil {
-			return fmt.Errorf("finding values for type %v: %v", typeName, err)
+			return fmt.Errorf("finding values for type %v: %s", typeName, err.Error())
+		}
+		if spec == nil {
+			log.Printf("[WARN] definition of the type %s isn't found, skip it. \n", typeName)
+			continue
 		}
 
-		model := templates.FigureOut(spec)
-		model.Package = pkg.Name
+		model, err := templates.FigureOut(spec)
+		if err != nil {
+			return fmt.Errorf("FigureOut for type %v is failed: %s", typeName, err.Error())
+		}
 
+		model.Package = pkg.Name
 		newRawFile, err := model.Exec(tmpl)
 		if err != nil {
-			log.Fatalf("exec template for type %v failed: %v", typeName, err)
+			return fmt.Errorf("exec template for type %v failed: %v", typeName, err)
 		}
 
-		if err := ioutil.WriteFile(config.getPath(typeName, dir), []byte(newRawFile), 0644); err != nil {
-			log.Fatalf("writing output: %s", err)
+		if err := ioutil.WriteFile(config.GetPath(typeName, dir), []byte(newRawFile), 0644); err != nil {
+			return fmt.Errorf("writing output failed: %s", err)
 		}
 	}
 

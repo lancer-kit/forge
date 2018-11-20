@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/fatih/camelcase"
@@ -14,6 +15,19 @@ var (
 	TransformRuleSpace TransformRule = "space"
 	TransformRuleNone  TransformRule = "none"
 )
+
+func (rule TransformRule) Validate() error {
+	switch rule {
+	case
+		TransformRuleSnake,
+		TransformRuleKebab,
+		TransformRuleSpace,
+		TransformRuleNone:
+		return nil
+	default:
+		return fmt.Errorf("TransformRule(%s) is invalid", rule)
+	}
+}
 
 func (rule TransformRule) Transform(src string) string {
 	switch rule {

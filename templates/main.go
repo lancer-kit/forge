@@ -43,9 +43,9 @@ func (analysis *Analysis) GenerateByTemplate(merge bool) map[string][]byte {
 
 	for typeName, spec := range analysis.Types {
 		for _, t := range EnumBase {
-			_, excludable := spec.ExcludeList[t.Name]
+			_, excludeList := spec.ExcludeList[t.Name]
 			//_, haveSpare := Spare[t.Name]
-			if excludable {
+			if excludeList {
 				//if !haveSpare {
 				continue
 				//}
@@ -71,10 +71,11 @@ func (analysis *Analysis) GenerateByTemplate(merge bool) map[string][]byte {
 		if err != nil {
 			// Should never happen, but can arise when developing this code.
 			// The user can compile the output to see the error.
-			log.Printf("warning: internal error: invalid Go generated: %s", err)
-			log.Printf("warning: compile the package to analyze the error")
+			log.Printf("[WARN] internal error: invalid Go generated: %s", err)
+			log.Printf("[WARN] compile the package to analyze the error")
 			results[key] = val
 		}
 	}
+
 	return results
 }
