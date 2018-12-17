@@ -2,9 +2,9 @@ package templates
 
 import (
 	"bytes"
-	"html/template"
 	"regexp"
 	"strings"
+	"text/template"
 
 	"github.com/pkg/errors"
 	"gitlab.inn4science.com/gophers/goplater/parser"
