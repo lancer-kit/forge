@@ -1,13 +1,14 @@
-# goplater
+# forge
 
-**goplater** is a tool for automating the creation of methods that satisfy some built-in interfaces or those defined in the templates.
+//todo: update description
+**forge** is a tool for automating the creation of methods that satisfy some built-in interfaces or those defined in the templates.
 
 # Usage 
 
-**goplater** can be run from console in directory with target type or with help `go generate`:
+**forge** can be run from console in directory with target type or with help `go generate`:
 
 ```bash
-$ goplater enum --type MyType
+$ forge enum --type MyType
 ``` 
 
 Or
@@ -15,7 +16,7 @@ Or
 ``` go
 package main
 
-//go:generate goplater enum --type MyType
+//go:generate forge enum --type MyType
 type MyType int 
 
 const (
@@ -25,12 +26,12 @@ const (
 )
 ```
 ```bash
-$  ./goplater 
+$  ./forge 
 NAME:
-   goplater - auto generate, dont repeat
+   forge - auto generate, dont repeat
 
 USAGE:
-   goplater [global options] command [command options] [arguments...]
+   forge [global options] command [command options] [arguments...]
 
 VERSION:
    2.0
@@ -48,7 +49,7 @@ GLOBAL OPTIONS:
 
 ### Enum
 
-Command: `goplater enum`
+Command: `forge enum`
 
 Implements predefined interfaces for a user-defined integer type with **iota**-constants.
 
@@ -82,12 +83,12 @@ List of arguments:
 
 Example
 ```bash
-goplater enum --type ShirtSize,WeekDay --merge true
+forge enum --type ShirtSize,WeekDay --merge true
 ```
 
 ### Model 
 
-Command: `goplater model`
+Command: `forge model`
 
 Find the structure definition, analyze it and fill in the transposed template.
 
@@ -125,4 +126,7 @@ List of arguments:
 
 # License
 
-This package is based on https://github.com/campoy/jsonenums.
+This tool contains code from next repos: 
+  - https://github.com/campoy/jsonenums.
+  - https://github.com/jteeuwen/go-bindata.
+

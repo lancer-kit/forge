@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"gitlab.inn4science.com/gophers/goplater/parser"
+	"gitlab.inn4science.com/gophers/forge/parser"
 )
 
 type ModelSpec struct {

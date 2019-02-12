@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/urfave/cli"
-	"gitlab.inn4science.com/gophers/goplater/parser"
-	"gitlab.inn4science.com/gophers/goplater/templates"
+	"gitlab.inn4science.com/gophers/forge/parser"
+	"gitlab.inn4science.com/gophers/forge/templates"
 )
 
 const (
