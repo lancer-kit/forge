@@ -1,4 +1,4 @@
-package models
+package generate
 
 import (
 	"flag"
@@ -8,15 +8,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sheb-gregor/goplater/parser"
-	"github.com/sheb-gregor/goplater/templates"
+	"gitlab.inn4science.com/gophers/forge/configs"
+	"gitlab.inn4science.com/gophers/forge/parser"
+	"gitlab.inn4science.com/gophers/forge/templates"
 )
 
 // todo: refactor
 // 1. Analyze model(s)
 // 2. Gen by template
 // 3. Write file
-func GenModel(config ModelConfig) error {
+func Model(config configs.ModelConfig) error {
 	// Only one directory at a time can be processed, and the default is ".".
 	dir := "."
 
@@ -30,14 +31,14 @@ func GenModel(config ModelConfig) error {
 			dir, err)
 	}
 
-	if len(config.types) == 1 {
-		config.mergeSpecs = false
+	if len(config.Types) == 1 {
+		config.MergeSpecs = false
 	}
 
 	// need to remove already generated files for types
 	// this is need for correct search of predefined by user
 	// type vars and methods
-	for _, typeName := range config.types {
+	for _, typeName := range config.Types {
 		// Remove safe because we already check is path valid
 		// and don't care about is present file - we need to remove it.
 		os.Remove(config.GetPath(typeName, dir))
@@ -48,13 +49,13 @@ func GenModel(config ModelConfig) error {
 		return fmt.Errorf("parsing package: %v", err)
 	}
 
-	tmpl, err := templates.OpenTemplate(config.tPath)
+	tmpl, err := templates.OpenTemplate(config.TPath)
 	if err != nil {
 		return fmt.Errorf("unable to open template: %s", err.Error())
 	}
 
 	// Run generate for each type.
-	for _, typeName := range config.types {
+	for _, typeName := range config.Types {
 		spec, err := pkg.FindStructureSpec(typeName)
 		if err != nil {
 			return fmt.Errorf("finding values for type %v: %s", typeName, err.Error())

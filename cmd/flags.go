@@ -5,10 +5,16 @@ import (
 )
 
 const (
-	typesFlag  = "type"
-	mergeFlag  = "merge"
-	suffixFlag = "suffix"
-	prefixFlag = "prefix"
+	typesFlag     = "type"
+	tPathFlag     = "tmpl"
+	mergeFlag     = "merge"
+	suffixFlag    = "suffix"
+	prefixFlag    = "prefix"
+	dirFlag       = "dir"
+	nameFlag      = "name"
+	transformFlag = "transform"
+	tprefixFlag   = "tprefix"
+	tmplFlag      = "tmpl"
 )
 
 var baseFlags = []cli.Flag{

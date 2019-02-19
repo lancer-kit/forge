@@ -5,39 +5,23 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
-
-	"github.com/urfave/cli"
-)
-
-const (
-	typesFlag  = "type"
-	mergeFlag  = "merge"
-	suffixFlag = "suffix"
-	prefixFlag = "prefix"
 )
 
 type BaseConfig struct {
-	types        []string
-	mergeSpecs   bool
-	outputSuffix string
-	outputPrefix string
-}
-
-func (BaseConfig) FromContext(c *cli.Context) BaseConfig {
-	return BaseConfig{
-		types:        strings.Split(c.String(typesFlag), ","),
-		mergeSpecs:   c.Bool(mergeFlag),
-		outputPrefix: c.String(prefixFlag),
-		outputSuffix: c.String(suffixFlag),
-	}
+	Types        []string
+	MergeSpecs   bool
+	OutputDir    string
+	OutputName   string
+	OutputSuffix string
+	OutputPrefix string
 }
 
 func (config *BaseConfig) Validate() error {
-	if len(config.types) == 0 {
-		return fmt.Errorf("%s: should not be empty", typesFlag)
+	if len(config.Types) == 0 {
+		return fmt.Errorf("type: should not be empty")
 	}
-	if config.outputPrefix == "" && config.outputSuffix == "" {
-		return fmt.Errorf("%s or %s: should be passed", suffixFlag, prefixFlag)
+	if config.OutputPrefix == "" && config.OutputSuffix == "" {
+		return fmt.Errorf("sufix or prefix: should be passed")
 	}
 
 	return nil
@@ -58,7 +42,7 @@ func (config BaseConfig) GetPath(name, dir string) string {
 		splittedName += string(r)
 	}
 
-	output := strings.ToLower(config.outputPrefix + splittedName + config.outputSuffix + ".go")
+	output := strings.ToLower(config.OutputPrefix + splittedName + config.OutputSuffix + ".go")
 
 	return filepath.Join(dir, output)
 }

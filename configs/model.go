@@ -1,13 +1,29 @@
 package configs
 
+import (
+	"fmt"
+	"os"
+)
+
 type ModelConfig struct {
 	BaseConfig
-	tPath string
+	TPath string
 }
 
-func (ModelConfig) FromContext(c *cli.Context) ModelConfig {
-	return ModelConfig{
-		BaseConfig: BaseConfig{}.FromContext(c),
-		tPath:      c.String(tPath),
+func (config *ModelConfig) Validate() error {
+	if err := config.BaseConfig.Validate(); err != nil {
+		return err
 	}
+	if config.TPath == "" {
+		return fmt.Errorf("tmpl: must be specified")
+	}
+
+	_, err := os.Stat(config.TPath)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("tmpl: file is not exist")
+	}
+	if err != nil {
+		return fmt.Errorf("tmpl: %s", err.Error())
+	}
+	return nil
 }

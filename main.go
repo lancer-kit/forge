@@ -15,6 +15,7 @@ func main() {
 	app.Commands = cli.Commands{
 		cmd.EnumCmd,
 		cmd.ModelCmd,
+		cmd.BindataCmd,
 	}
 
 	_ = app.Run(os.Args)

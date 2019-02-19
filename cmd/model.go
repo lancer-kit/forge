@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/urfave/cli"
+
+	"gitlab.inn4science.com/gophers/forge/configs"
+	"gitlab.inn4science.com/gophers/forge/generate"
 )
 
 const tPath = "tmpl"
@@ -33,37 +33,26 @@ var ModelCmd = cli.Command{
 			Value: "",
 		},
 	},
-	Action: genModelAction,
+	Action: modelAction,
 }
 
-func (config *ModelConfig) Validate() error {
-	if err := config.BaseConfig.Validate(); err != nil {
-		return err
-	}
-	if config.tPath == "" {
-		return fmt.Errorf("%s: must be specified", tPath)
-	}
-
-	_, err := os.Stat(config.tPath)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("%s: file is not exist", tPath)
-	}
-	if err != nil {
-		return fmt.Errorf("%s: %s", tPath, err.Error())
-	}
-	return nil
-}
-
-func genModelAction(c *cli.Context) error {
-	config := ModelConfig{}.FromContext(c)
+func modelAction(c *cli.Context) error {
+	config := modelConfig(c)
 	if err := config.Validate(); err != nil {
 		return cli.NewExitError("[ERROR] "+err.Error(), 1)
 	}
 
-	err := genModel(config)
+	err := generate.Model(config)
 	if err != nil {
 		return cli.NewExitError("[ERROR] "+err.Error(), 1)
 	}
 
 	return nil
+}
+
+func modelConfig(c *cli.Context) configs.ModelConfig {
+	return configs.ModelConfig{
+		BaseConfig: baseConfig(c),
+		TPath:      c.String(tmplFlag),
+	}
 }

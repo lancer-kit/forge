@@ -1,116 +1,151 @@
-// This work is subject to the CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
-// license. Its contents can be found at:
-// http://creativecommons.org/publicdomain/zero/1.0/
-
 package cmd
 
 import (
-	"flag"
-	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	"gitlab.inn4science.com/gophers/forge/bindata"
+	"github.com/urfave/cli"
+
+	"gitlab.inn4science.com/gophers/forge/configs"
+	"gitlab.inn4science.com/gophers/forge/generate"
 )
 
-func main() {
-	cfg := parseArgs()
-	err := bindata.Translate(cfg)
+const (
+	debugFlag      = "debug"
+	devFlag        = "dev"
+	nomemcopyFlag  = "nomemcopy"
+	nocompressFlag = "nocompress"
+	nometadataFlag = "nometadata"
+	tagsFlag       = "tags"
+	pkgFlag        = "pkg"
+	outputFlag     = "o"
+	modeFlag       = "mode"
+	modetimeFlag   = "modetime"
+	ignoreFlag     = "ignore"
+	inputFlag      = "i"
+)
 
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "bindata: %v\n", err)
-		os.Exit(1)
-	}
+var BindataCmd = cli.Command{
+	Name:  "bindata",
+	Usage: "forge bindata <options>",
+	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name: debugFlag,
+			Usage: "Do not embed the assets, but provide the embedding API. " +
+				"Contents will still be loaded from disk.",
+		},
+		cli.BoolFlag{
+			Name: devFlag,
+			Usage: "Similar to debug, but does not emit absolute paths. " +
+				"Expects a rootDir variable to already exist in the generated code's package.",
+		},
+		cli.BoolFlag{
+			Name: nomemcopyFlag,
+			Usage: "Use a .rodata hack to get rid of unnecessary memcopies. " +
+				"Refer to the documentation to see what implications this carries.",
+		},
+		cli.BoolFlag{
+			Name:  nocompressFlag,
+			Usage: "Assets will *not* be GZIP compressed when this flag is specified.",
+		},
+		cli.BoolFlag{
+			Name:  nometadataFlag,
+			Usage: "Assets will not preserve size, mode, and modtime info.",
+		},
+		cli.StringFlag{
+			Name:  tagsFlag,
+			Usage: "Optional set of build tags to include.",
+		},
+		cli.StringFlag{
+			Name:  prefixFlag,
+			Usage: "Optional path prefix to strip off asset names.",
+		},
+		cli.StringFlag{
+			Name:  pkgFlag,
+			Usage: "Package name to use in the generated code.",
+		},
+		cli.StringFlag{
+			Name:  outputFlag,
+			Usage: "Optional name of the output file to be generated.",
+		},
+		cli.UintFlag{
+			Name:  modeFlag,
+			Usage: "Optional file mode override for all files.",
+		},
+		cli.Int64Flag{
+			Name:  modetimeFlag,
+			Usage: "Optional modification unix timestamp override for all files.",
+		},
+		cli.StringSliceFlag{
+			Name:  ignoreFlag,
+			Usage: "Regex pattern to ignore",
+		},
+		cli.StringSliceFlag{
+			Name:  inputFlag,
+			Usage: "List of input directories/files",
+		},
+	},
+	Action: bindataAction,
 }
 
-// parseArgs create s a new, filled configuration instance
-// by reading and parsing command line options.
-//
-// This function exits the program with an error, if
-// any of the command line options are incorrect.
-func parseArgs() *bindata.Config {
-	c := bindata.NewConfig()
-
-	flag.Usage = func() {
-		fmt.Printf("Usage: %s [options] <input directories>\n\n", os.Args[0])
-		flag.PrintDefaults()
+func bindataAction(c *cli.Context) error {
+	cfg := bindataConfig(c)
+	if err := cfg.Validate(); err != nil {
+		return cli.NewExitError("[ERROR] "+err.Error(), 1)
 	}
+	if err := generate.Bindata(cfg); err != nil {
+		return cli.NewExitError("[ERROR] "+err.Error(), 1)
+	}
+	return nil
+}
 
-	flag.BoolVar(&c.Debug, "debug", c.Debug, "Do not embed the assets, but provide the embedding API. Contents will still be loaded from disk.")
-	flag.BoolVar(&c.Dev, "dev", c.Dev, "Similar to debug, but does not emit absolute paths. Expects a rootDir variable to already exist in the generated code's package.")
-	flag.StringVar(&c.Tags, "tags", c.Tags, "Optional set of build tags to include.")
-	flag.StringVar(&c.Prefix, "prefix", c.Prefix, "Optional path prefix to strip off asset names.")
-	flag.StringVar(&c.Package, "pkg", c.Package, "Package name to use in the generated code.")
-	flag.BoolVar(&c.NoMemCopy, "nomemcopy", c.NoMemCopy, "Use a .rodata hack to get rid of unnecessary memcopies. Refer to the documentation to see what implications this carries.")
-	flag.BoolVar(&c.NoCompress, "nocompress", c.NoCompress, "Assets will *not* be GZIP compressed when this flag is specified.")
-	flag.BoolVar(&c.NoMetadata, "nometadata", c.NoMetadata, "Assets will not preserve size, mode, and modtime info.")
-	flag.UintVar(&c.Mode, "mode", c.Mode, "Optional file mode override for all files.")
-	flag.Int64Var(&c.ModTime, "modtime", c.ModTime, "Optional modification unix timestamp override for all files.")
-	flag.StringVar(&c.Output, "o", c.Output, "Optional name of the output file to be generated.")
-
-	ignore := make([]string, 0)
-	flag.Var((*AppendSliceValue)(&ignore), "ignore", "Regex pattern to ignore")
-
-	flag.Parse()
-
-	patterns := make([]*regexp.Regexp, 0)
+func bindataConfig(c *cli.Context) *configs.BindataConfig {
+	cfg := &configs.BindataConfig{
+		Debug:      c.Bool(debugFlag),
+		Dev:        c.Bool(devFlag),
+		NoMemCopy:  c.Bool(nomemcopyFlag),
+		NoCompress: c.Bool(nocompressFlag),
+		NoMetadata: c.Bool(nometadataFlag),
+		Tags:       c.String(tagsFlag),
+		Prefix:     c.String(prefixFlag),
+		Package:    c.String(pkgFlag),
+		Output:     c.String(outputFlag),
+		Mode:       c.Uint(modeFlag),
+		ModTime:    c.Int64(modetimeFlag),
+	}
+	if cfg.Output == "" {
+		cfg.Output = "./bindata.go"
+	}
+	if cfg.Package == "" {
+		cfg.Package = "main"
+	}
+	ignore := c.StringSlice(ignoreFlag)
+	cfg.Ignore = make([]*regexp.Regexp, 0)
 	for _, pattern := range ignore {
-		patterns = append(patterns, regexp.MustCompile(pattern))
+		cfg.Ignore = append(cfg.Ignore, regexp.MustCompile(pattern))
 	}
-	c.Ignore = patterns
-
-	// Make sure we have input paths.
-	if flag.NArg() == 0 {
-		fmt.Fprintf(os.Stderr, "Missing <input dir>\n\n")
-		flag.Usage()
-		os.Exit(1)
+	input := c.StringSlice(inputFlag)
+	cfg.Input = make([]configs.BindataInputConfig, 0)
+	for i := range input {
+		cfg.Input = append(cfg.Input, parseInput(input[i]))
 	}
-
-	// Create input configurations.
-	c.Input = make([]bindata.InputConfig, flag.NArg())
-	for i := range c.Input {
-		c.Input[i] = parseInput(flag.Arg(i))
-	}
-
-	return c
+	return cfg
 }
 
-// parseRecursive determines whether the given path has a recrusive indicator and
+// parseRecursive determines whether the given path has a recursive indicator and
 // returns a new path with the recursive indicator chopped off if it does.
-//
-//  ex:
 //      /path/to/foo/...    -> (/path/to/foo, true)
 //      /path/to/bar        -> (/path/to/bar, false)
-func parseInput(path string) bindata.InputConfig {
+func parseInput(path string) configs.BindataInputConfig {
 	if strings.HasSuffix(path, "/...") {
-		return bindata.InputConfig{
+		return configs.BindataInputConfig{
 			Path:      filepath.Clean(path[:len(path)-4]),
 			Recursive: true,
 		}
-	} else {
-		return bindata.InputConfig{
-			Path:      filepath.Clean(path),
-			Recursive: false,
-		}
 	}
-
-}
-
-// AppendSliceValue implements the flag.Value interface and allows multiple
-// calls to the same variable to append a list.
-type AppendSliceValue []string
-
-func (s *AppendSliceValue) String() string {
-	return strings.Join(*s, ",")
-}
-
-func (s *AppendSliceValue) Set(value string) error {
-	if *s == nil {
-		*s = make([]string, 0, 1)
+	return configs.BindataInputConfig{
+		Path:      filepath.Clean(path),
+		Recursive: false,
 	}
-
-	*s = append(*s, value)
-	return nil
 }
