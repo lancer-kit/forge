@@ -20,9 +20,10 @@ import (
 	"os"
 	"strings"
 )
-//go:generate goplater enum --type ShirtSize,WeekDay --merge true
 
-//go:generate goplater enum -type=ShirtSize
+//go:generate forge enum --type ShirtSize,WeekDay --merge true
+
+//go:generate forge enum -type=ShirtSize
 
 type ShirtSize byte
 
@@ -35,7 +36,7 @@ const (
 	XL
 )
 
-//go:generate goplater enum --type WeekDay
+//go:generate forge enum --type WeekDay
 
 type WeekDay int
 

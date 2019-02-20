@@ -14,7 +14,7 @@
 // JSONenums is a tool to automate the creation of methods that satisfy the
 // fmt.Stringer, json.Marshaler and json.Unmarshaler interfaces.
 // Given the name of a (signed or unsigned) integer type T that has constants
-// defined, goplater will create a new self-contained Go source file implementing
+// defined, forge will create a new self-contained Go source file implementing
 //
 //  func (t T) String() string
 //  func (t T) MarshalJSON() ([]byte, error)
@@ -42,7 +42,7 @@
 //
 // running this command
 //
-//	goplater -type=Pill
+//	forge -type=Pill
 //
 // in the same directory will create the file pill_jsonenums.go, in package painkiller,
 // containing a definition of
@@ -57,7 +57,7 @@
 //
 // Typically this process would be run using go generate, like this:
 //
-//	//go:generate goplater -type=Pill
+//	//go:generate forge -type=Pill
 //
 // If multiple constants have the same value, the lexically first matching name will
 // be used (in the example, Acetaminophen will print as "Paracetamol").

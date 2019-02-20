@@ -1,6 +1,6 @@
 package main
 
-//go:generate goplater model --type UserSomethingNew  --suffix _q --tmpl ./q.tmpl
+//go:generate forge model --type UserSomethingNew  --suffix _q --tmpl ./q.tmpl
 
 type User struct {
 	Name     string `db:"name" json:"name"`
