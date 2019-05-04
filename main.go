@@ -9,7 +9,7 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Version = "2.4"
+	app.Version = "2.5"
 	app.Name = "forge"
 	app.Usage = "cli tool and generator from lancer-kit"
 	app.Commands = cli.Commands{

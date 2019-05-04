@@ -2,6 +2,18 @@
 
 
 [[projects]]
+  digest = "1:91fc3f4d1842584d1342364193106e80d1d532bbd1668fbd7c61627f01d0111f"
+  name = "github.com/btcsuite/goleveldb"
+  packages = [
+    "leveldb/errors",
+    "leveldb/storage",
+    "leveldb/util",
+  ]
+  pruneopts = "UT"
+  revision = "3fd0373267b6461dbefe91cef614278064d05465"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -66,6 +78,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/btcsuite/goleveldb/leveldb/errors",
     "github.com/fatih/camelcase",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",
