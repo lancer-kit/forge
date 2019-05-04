@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"gitlab.inn4science.com/gophers/forge/templates"
+	"github.com/lancer-kit/forge/templates"
 )
 
 type EnumsConfig struct {

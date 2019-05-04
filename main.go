@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/lancer-kit/forge/cmd"
 	"github.com/urfave/cli"
-	"gitlab.inn4science.com/gophers/forge/cmd"
 )
 
 func main() {

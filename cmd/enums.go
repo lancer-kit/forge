@@ -3,9 +3,9 @@ package cmd
 import (
 	"github.com/urfave/cli"
 
-	"gitlab.inn4science.com/gophers/forge/configs"
-	"gitlab.inn4science.com/gophers/forge/generate"
-	"gitlab.inn4science.com/gophers/forge/templates"
+	"github.com/lancer-kit/forge/configs"
+	"github.com/lancer-kit/forge/generate"
+	"github.com/lancer-kit/forge/templates"
 )
 
 var EnumCmd = cli.Command{

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"gitlab.inn4science.com/gophers/forge/configs"
+	"github.com/lancer-kit/forge/configs"
 )
 
 // WriteDebug writes the debug code file.

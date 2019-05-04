@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.inn4science.com/gophers/forge/configs"
-	"gitlab.inn4science.com/gophers/forge/parser"
-	"gitlab.inn4science.com/gophers/forge/templates"
+	"github.com/lancer-kit/forge/configs"
+	"github.com/lancer-kit/forge/parser"
+	"github.com/lancer-kit/forge/templates"
 )
 
 // todo: refactor

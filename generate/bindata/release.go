@@ -9,7 +9,7 @@ import (
 	"os"
 	"unicode/utf8"
 
-	"gitlab.inn4science.com/gophers/forge/configs"
+	"github.com/lancer-kit/forge/configs"
 )
 
 // WriteRelease writes the release code file.

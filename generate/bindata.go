@@ -10,8 +10,8 @@ import (
 	"strings"
 	"unicode"
 
-	"gitlab.inn4science.com/gophers/forge/configs"
-	"gitlab.inn4science.com/gophers/forge/generate/bindata"
+	"github.com/lancer-kit/forge/configs"
+	"github.com/lancer-kit/forge/generate/bindata"
 )
 
 // Bindata reads assets from an input directory, converts them

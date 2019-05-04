@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.inn4science.com/gophers/forge/configs"
+	"github.com/lancer-kit/forge/configs"
 )
 
 type assetTree struct {
