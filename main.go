@@ -16,6 +16,7 @@ func main() {
 		cmd.EnumCmd,
 		cmd.ModelCmd,
 		cmd.BindataCmd,
+		cmd.ScaffoldCmd(),
 	}
 
 	_ = app.Run(os.Args)
