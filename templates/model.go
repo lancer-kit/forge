@@ -6,8 +6,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/lancer-kit/forge/parser"
 	"github.com/pkg/errors"
+
+	"github.com/lancer-kit/forge/parser"
 )
 
 type ModelSpec struct {

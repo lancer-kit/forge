@@ -5,9 +5,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/urfave/cli"
+
 	"github.com/lancer-kit/forge/configs"
 	"github.com/lancer-kit/forge/generate"
-	"github.com/urfave/cli"
 )
 
 const (

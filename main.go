@@ -3,8 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/lancer-kit/forge/cmd"
 	"github.com/urfave/cli"
+
+	"github.com/lancer-kit/forge/cmd"
 )
 
 func main() {
