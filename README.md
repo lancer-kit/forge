@@ -107,6 +107,17 @@ Templates are use [lancer-kit](https://github.com/lancer-kit) `armory` package f
 
 The scaffolder may generate the go mods with project name and tidy them on `--gomods` flag.
 
+
+#### Templates
+Scaffolder has a custom system of templates that are defined in schema.yml file with the constant 
+description of the specification of base and optional modules of the project. The specification 
+contains the base predefined configuration, that is used during the scaffold process if the `-p`
+flag was not used during scaffold.
+
+Now the scaffolder can generate two projects:
+- base (with `base-tmpl` flag)
+- example project  (with `foo-tmpl` flag)
+
 #### Example
 ```
 go get github.com/lancer-kit/forge

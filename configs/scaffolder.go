@@ -11,6 +11,11 @@ type ScaffolderCfg struct {
 	ProjectName string
 	Schema      TmplSchemaCfg
 	TmplModules ScaffoldTmplModules
+
+	// TmplName defines the key name of the template that is predefined in
+	// schema.yml file. In case if the TmplName is empty the base template
+	// is grabbed from schema.yml file
+	TmplName string
 }
 
 func (cfg ScaffolderCfg) Validate() error {

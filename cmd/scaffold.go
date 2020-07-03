@@ -15,6 +15,7 @@ const (
 	FlagDomain     = "d"
 	FlagName       = "n"
 	FlagOutputPath = "o"
+	FlagTmplName   = "t"
 	FlagGoModules  = "gomods"
 
 	FlagSchemaPath = "schema"
@@ -48,6 +49,10 @@ func NewProjectCmd() cli.Command {
 				Name:  FlagName,
 				Usage: "Specifies project scaffold name",
 				Value: "scaffold/project",
+			},
+			&cli.StringFlag{
+				Name:  FlagTmplName,
+				Usage: "Specifies the template name to scaffold",
 			},
 			&cli.BoolFlag{
 				Name:  FlagAPIService,
@@ -115,6 +120,7 @@ func scaffoldConfig(c *cli.Context) configs.ScaffolderCfg {
 		Schema:      project.ReadSchema(c.String(FlagSchemaPath)),
 		ProjectName: projectName,
 		TmplModules: tmplModules,
+		TmplName:    c.String(FlagTmplName),
 	}
 	err := cfg.Validate()
 	if err != nil {

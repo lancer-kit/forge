@@ -18,14 +18,34 @@ type Project struct {
 }
 
 func (p *Project) BaseTmpl() configs.SpecCfg {
-	return p.cfg.Schema.Specs[p.cfg.Schema.Base]
+	keyName := p.cfg.Schema.Base
+	spec, ok := p.cfg.Schema.Specs[keyName]
+	if !ok {
+		log.Fatalf("failed to get the base template specification by defined key: %s", keyName)
+	}
+	return spec
+}
+
+func (p *Project) SpecTmpl(tmplKeyName string) configs.SpecCfg {
+	spec, ok := p.cfg.Schema.Specs[tmplKeyName]
+	if !ok {
+		log.Fatalf("failed to get the template specification by defined key: %s", tmplKeyName)
+	}
+	return spec
 }
 
 // Scaffold scaffolds the bindata file tmpl
 func (p *Project) Scaffold() error {
+	// check the template name to scaffold
+	var tmplSpec configs.SpecCfg
+	if p.cfg.TmplName == "" {
+		tmplSpec = p.BaseTmpl()
+	} else {
+		tmplSpec = p.SpecTmpl(p.cfg.TmplName)
+	}
+
 	// generate the base directory structure
-	baseTmplSpec := p.BaseTmpl()
-	err := p.scaffoldTmplDir(fmt.Sprintf("%s/%s", baseTmplSpec.Path, baseTmplSpec.Target.Path))
+	err := p.scaffoldTmplDir(fmt.Sprintf("%s/%s", tmplSpec.Path, tmplSpec.Target.Path))
 	if err != nil {
 		return fmt.Errorf("failed to scaffold base dir: %s", err)
 	}
@@ -37,7 +57,7 @@ func (p *Project) Scaffold() error {
 		}
 		if tmplValue == true {
 			log.Printf("generate the template %s %v", tmplKey, tmplValue)
-			module := baseTmplSpec.Modules[key]
+			module := tmplSpec.Modules[key]
 			err := p.scaffoldTmplDir(module.Path)
 			if err != nil {
 				return fmt.Errorf("failed to scaffold base dir: %s", err)
