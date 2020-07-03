@@ -17,7 +17,7 @@ func main() {
 		cmd.EnumCmd,
 		cmd.ModelCmd,
 		cmd.BindataCmd,
-		cmd.ScaffoldCmd(),
+		cmd.NewProjectCmd(),
 	}
 
 	_ = app.Run(os.Args)

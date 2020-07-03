@@ -24,11 +24,12 @@ const (
 	FlagSimpleWorkerService = "base_uwe"
 )
 
-func ScaffoldCmd() cli.Command {
-	cmd := cli.Command{
-		Name:  "gen",
-		Usage: "gen scaffold project structure",
+func NewProjectCmd() cli.Command {
+	return cli.Command{
+		Name:  "new",
+		Usage: "generate new project structure from template",
 		Action: func(c *cli.Context) error {
+			// todo: move flag parsing into function and config structure
 			schema := project.ReadSchema(c.String(FlagSchemaPath))
 			var projectName string
 			if c.String(FlagDomain) == "" {
@@ -105,7 +106,6 @@ func ScaffoldCmd() cli.Command {
 			},
 		},
 	}
-	return cmd
 }
 
 func execInScaffoldPath(c *cli.Context, name string, args ...string) error {

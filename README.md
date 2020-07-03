@@ -4,6 +4,17 @@
 
 **forge** is a tool for automating the creation of methods that satisfy some built-in interfaces or those defined in the templates.
 
+## Table of content 
+
+1. [Usage](#usage)
+    
+    1. [Enum](#enum)
+    2. [Model](#model)
+    3. [Bindata](#bindata)
+    4. [Project](#project)
+    
+
+
 # Usage 
 
 **forge** can be run from console in directory with target type or with help `go generate`:
@@ -143,6 +154,8 @@ OPTIONS:
    -i value          List of input directories/files
 ```
 
+
+### Project
 
 # ToDo
 
