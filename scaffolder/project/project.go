@@ -17,10 +17,15 @@ type Project struct {
 	cfg *configs.ScaffolderCfg
 }
 
+func (p *Project) BaseTmpl() configs.SpecCfg {
+	return p.cfg.Schema.Specs[p.cfg.Schema.Base]
+}
+
 // Scaffold scaffolds the bindata file tmpl
 func (p *Project) Scaffold() error {
 	// generate the base directory structure
-	err := p.scaffoldTmplDir(p.cfg.Schema.Target.Path)
+	baseTmplSpec := p.BaseTmpl()
+	err := p.scaffoldTmplDir(fmt.Sprintf("%s/%s", baseTmplSpec.Path, baseTmplSpec.Target.Path))
 	if err != nil {
 		return fmt.Errorf("failed to scaffold base dir: %s", err)
 	}
@@ -32,7 +37,7 @@ func (p *Project) Scaffold() error {
 		}
 		if tmplValue == true {
 			log.Printf("generate the template %s %v", tmplKey, tmplValue)
-			module := p.cfg.Schema.Modules[key]
+			module := baseTmplSpec.Modules[key]
 			err := p.scaffoldTmplDir(module.Path)
 			if err != nil {
 				return fmt.Errorf("failed to scaffold base dir: %s", err)
@@ -63,11 +68,14 @@ func (p *Project) scaffoldTmplDir(dir string) error {
 func getAssetFromDir(dir string) []string {
 	var paths = make([]string, 0)
 	for _, tmplName := range AssetNames() {
-		assetRootDirName := strings.Split(tmplName, "/")[0]
+		tmplRawPath := strings.Split(tmplName, "/")
+		assetRootDirName := fmt.Sprintf("%s/%s", tmplRawPath[0], tmplRawPath[1])
+
 		if assetRootDirName == "" {
 			return nil
 		}
-		if dir == filepath.Base(assetRootDirName) {
+
+		if dir == assetRootDirName {
 			paths = append(paths, tmplName)
 		}
 	}

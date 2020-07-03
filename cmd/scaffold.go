@@ -65,7 +65,7 @@ func NewProjectCmd() cli.Command {
 				Name:   FlagSchemaPath,
 				Usage:  "Specifies the tmpl schema path",
 				Hidden: true,
-				Value:  "../scaffolder/templates/schema.yml",
+				Value:  "./scaffolder/templates/schema.yml",
 			},
 		},
 	}
@@ -73,9 +73,6 @@ func NewProjectCmd() cli.Command {
 
 func scaffoldAction(c *cli.Context) error {
 	cfg := scaffoldConfig(c)
-	if err := cfg.Validate(); err != nil {
-		return cli.NewExitError("[ERROR] "+err.Error(), 1)
-	}
 
 	err := project.NewProject(&cfg).Scaffold()
 	if err != nil {
@@ -113,12 +110,17 @@ func scaffoldConfig(c *cli.Context) configs.ScaffolderCfg {
 		configs.ModuleKeySimpleWorker:  c.Bool(FlagSimpleWorkerService),
 	}
 
-	return configs.ScaffolderCfg{
+	cfg := configs.ScaffolderCfg{
 		OutPath:     c.String(FlagOutputPath),
 		Schema:      project.ReadSchema(c.String(FlagSchemaPath)),
 		ProjectName: projectName,
 		TmplModules: tmplModules,
 	}
+	err := cfg.Validate()
+	if err != nil {
+		log.Fatalf("no all necessary fields for scaffolding the project: %s", err)
+	}
+	return cfg
 }
 
 func execInScaffoldPath(c *cli.Context, name string, args ...string) error {
