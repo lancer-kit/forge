@@ -9,30 +9,30 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/lancer-kit/forge/configs"
 )
 
 type Project struct {
-	outPath    string
-	tmplData   ScaffoldTmplModules
-	modulesCfg TemplatesCfg
+	cfg *configs.ScaffolderCfg
 }
 
 // Scaffold scaffolds the bindata file tmpl
 func (p *Project) Scaffold() error {
 	// generate the base directory structure
-	err := p.scaffoldTmplDir(p.modulesCfg.Target.Path)
+	err := p.scaffoldTmplDir(p.cfg.Schema.Target.Path)
 	if err != nil {
 		return fmt.Errorf("failed to scaffold base dir: %s", err)
 	}
 
-	for tmplKey := range p.tmplData {
-		key, ok := tmplKey.(ScaffoldTmplKey)
+	for tmplValue, tmplKey := range p.cfg.TmplModules {
+		key, ok := tmplKey.(configs.ScaffoldTmplKey)
 		if !ok {
 			continue
 		}
-		if p.tmplData[tmplKey] == true {
-			log.Printf("generate the template %s %v", tmplKey, p.tmplData[tmplKey])
-			module := p.modulesCfg.Modules[key]
+		if tmplValue == true {
+			log.Printf("generate the template %s %v", tmplKey, tmplValue)
+			module := p.cfg.Schema.Modules[key]
 			err := p.scaffoldTmplDir(module.Path)
 			if err != nil {
 				return fmt.Errorf("failed to scaffold base dir: %s", err)
@@ -49,10 +49,10 @@ func (p *Project) scaffoldTmplDir(dir string) error {
 		if err != nil {
 			return fmt.Errorf("failed to get rel path: %s", err)
 		}
-		genRawPath := filepath.Join(p.outPath, relPath)
+		genRawPath := filepath.Join(p.cfg.OutPath, relPath)
 		genPath := strings.TrimSuffix(genRawPath, filepath.Ext(genRawPath))
 
-		err = RestoreTemplate(genPath, fileName, p.tmplData)
+		err = RestoreTemplate(genPath, fileName, p.cfg.TmplModules)
 		if err != nil {
 			return fmt.Errorf("failed to restore tmpl: %s", err)
 		}
@@ -118,10 +118,8 @@ func RestoreTemplate(path, name string, data interface{}) error {
 	return nil
 }
 
-func NewProject(outPath string, cfg TemplatesCfg, data ScaffoldTmplModules) *Project {
+func NewProject(cfg *configs.ScaffolderCfg) *Project {
 	return &Project{
-		outPath:    outPath,
-		modulesCfg: cfg,
-		tmplData:   data,
+		cfg: cfg,
 	}
 }

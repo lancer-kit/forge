@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/lancer-kit/forge/configs"
 	"github.com/lancer-kit/forge/scaffolder/project"
 )
 
@@ -26,47 +27,9 @@ const (
 
 func NewProjectCmd() cli.Command {
 	return cli.Command{
-		Name:  "new",
-		Usage: "generate new project structure from template",
-		Action: func(c *cli.Context) error {
-			// todo: move flag parsing into function and config structure
-			schema := project.ReadSchema(c.String(FlagSchemaPath))
-			var projectName string
-			if c.String(FlagDomain) == "" {
-				projectName = c.String(FlagName)
-			} else {
-				projectName = fmt.Sprintf("%s/%s", c.String(FlagDomain), c.String(FlagName))
-			}
-			log.Printf("scaffolding project %s", projectName)
-
-			scaffoldSchema := project.ScaffoldTmplModules{
-				project.ScaffoldProjectNameKey: projectName,
-				project.ModuleKeyAPI:           c.Bool(FlagAPIService),
-				project.ModuleKeyDB:            c.Bool(FlagDBService),
-				project.ModuleKeySimpleWorker:  c.Bool(FlagSimpleWorkerService),
-			}
-			p := project.NewProject(c.String(FlagOutputPath), schema, scaffoldSchema)
-
-			err := p.Scaffold()
-			if err != nil {
-				return fmt.Errorf("failed to scaffold project: %s", err)
-			}
-
-			if c.Bool(FlagGoModules) {
-				log.Printf("running go mod init %s", projectName)
-				err = execInScaffoldPath(c, "go", "mod", "init", projectName)
-				if err != nil {
-					return fmt.Errorf("failed to init go modules: %s", err)
-				}
-
-				log.Println("running go mod tidy")
-				err = execInScaffoldPath(c, "go", "mod", "tidy")
-				if err != nil {
-					return fmt.Errorf("failed to tidy go modules: %s", err)
-				}
-			}
-			return nil
-		},
+		Name:   "new",
+		Usage:  "generate new project structure from template",
+		Action: scaffoldAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  FlagGoModules,
@@ -105,6 +68,56 @@ func NewProjectCmd() cli.Command {
 				Value:  "../scaffolder/templates/schema.yml",
 			},
 		},
+	}
+}
+
+func scaffoldAction(c *cli.Context) error {
+	cfg := scaffoldConfig(c)
+	if err := cfg.Validate(); err != nil {
+		return cli.NewExitError("[ERROR] "+err.Error(), 1)
+	}
+
+	err := project.NewProject(&cfg).Scaffold()
+	if err != nil {
+		return fmt.Errorf("failed to scaffold project: %s", err)
+	}
+
+	if c.Bool(FlagGoModules) {
+		log.Printf("running go mod init %s", cfg.ProjectName)
+		err = execInScaffoldPath(c, "go", "mod", "init", cfg.ProjectName)
+		if err != nil {
+			return fmt.Errorf("failed to init go modules: %s", err)
+		}
+
+		log.Println("running go mod tidy")
+		err = execInScaffoldPath(c, "go", "mod", "tidy")
+		if err != nil {
+			return fmt.Errorf("failed to tidy go modules: %s", err)
+		}
+	}
+	return nil
+}
+
+func scaffoldConfig(c *cli.Context) configs.ScaffolderCfg {
+	var projectName string
+	if c.String(FlagDomain) == "" {
+		projectName = c.String(FlagName)
+	} else {
+		projectName = fmt.Sprintf("%s/%s", c.String(FlagDomain), c.String(FlagName))
+	}
+
+	tmplModules := configs.ScaffoldTmplModules{
+		configs.ScaffoldProjectNameKey: projectName,
+		configs.ModuleKeyAPI:           c.Bool(FlagAPIService),
+		configs.ModuleKeyDB:            c.Bool(FlagDBService),
+		configs.ModuleKeySimpleWorker:  c.Bool(FlagSimpleWorkerService),
+	}
+
+	return configs.ScaffolderCfg{
+		OutPath:     c.String(FlagOutputPath),
+		Schema:      project.ReadSchema(c.String(FlagSchemaPath)),
+		ProjectName: projectName,
+		TmplModules: tmplModules,
 	}
 }
 
