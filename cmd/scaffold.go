@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	FlagDomain     = "domain"
-	FlagName       = "name"
-	FlagOutputPath = "output"
-	FlagGoModules  = "gomods"
+	FlagDomain      = "domain"
+	FlagName        = "name"
+	FlagOutputPath  = "output"
+	FlagGoModules   = "gomods"
+	FlagGitInitRepo = "repo"
 )
 
 func NewProjectCmd() cli.Command {
@@ -42,6 +43,10 @@ func NewProjectCmd() cli.Command {
 				Usage: "Specifies project scaffold name",
 				Value: "scaffold/project",
 			},
+			&cli.StringFlag{
+				Name:  FlagGitInitRepo + ", r",
+				Usage: "Initialize git repository with origin",
+			},
 		},
 	}
 }
@@ -65,6 +70,26 @@ func scaffoldAction(c *cli.Context) error {
 		err = execInScaffoldPath(c, "go", "mod", "tidy")
 		if err != nil {
 			return fmt.Errorf("failed to tidy go modules: %s", err)
+		}
+	}
+
+	if c.String(FlagGitInitRepo) != "" {
+		log.Println("git init")
+		err = execInScaffoldPath(c, "git", "init")
+		if err != nil {
+			return fmt.Errorf("failed to init git repository: %s", err)
+		}
+
+		log.Println("git add .")
+		err = execInScaffoldPath(c, "git", "add", ".")
+		if err != nil {
+			return fmt.Errorf("failed to add all chahnges to git repository: %s", err)
+		}
+
+		log.Printf("git add origin: %s", c.String(FlagGitInitRepo))
+		err = execInScaffoldPath(c, "git", "remote", "add", "origin", c.String(FlagGitInitRepo))
+		if err != nil {
+			return fmt.Errorf("failed to add remote origin %s: %s", c.String(FlagGitInitRepo), err)
 		}
 	}
 	return nil
