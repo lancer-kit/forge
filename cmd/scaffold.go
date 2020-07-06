@@ -12,18 +12,10 @@ import (
 )
 
 const (
-	FlagDomain     = "d"
-	FlagName       = "n"
-	FlagOutputPath = "o"
-	FlagTmplName   = "t"
+	FlagDomain     = "domain"
+	FlagName       = "name"
+	FlagOutputPath = "output"
 	FlagGoModules  = "gomods"
-
-	FlagSchemaPath = "schema"
-	// Optional flags that are used to scaffold custom project with some
-	// defined workers api/db/
-	FlagAPIService          = "api"
-	FlagDBService           = "db"
-	FlagSimpleWorkerService = "base_uwe"
 )
 
 func NewProjectCmd() cli.Command {
@@ -33,44 +25,22 @@ func NewProjectCmd() cli.Command {
 		Action: scaffoldAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  FlagGoModules,
+				Name:  FlagGoModules + ", m",
 				Usage: "Initializes the go modules with module name in scaffold project",
 			},
 			&cli.StringFlag{
-				Name:  FlagOutputPath,
+				Name:  FlagOutputPath + ", o",
 				Usage: "Specifies output dir to scaffold the project",
 				Value: "./out",
 			},
 			&cli.StringFlag{
-				Name:  FlagDomain,
+				Name:  FlagDomain + ", d",
 				Usage: "Specifies project scaffold domain",
 			},
 			&cli.StringFlag{
-				Name:  FlagName,
+				Name:  FlagName + ", n",
 				Usage: "Specifies project scaffold name",
 				Value: "scaffold/project",
-			},
-			&cli.StringFlag{
-				Name:  FlagTmplName,
-				Usage: "Specifies the template name to scaffold",
-			},
-			&cli.BoolFlag{
-				Name:  FlagAPIService,
-				Usage: "Specifies generation of optional API service logic",
-			},
-			&cli.BoolFlag{
-				Name:  FlagDBService,
-				Usage: "Specifies generation of optional DB service logic",
-			},
-			&cli.BoolFlag{
-				Name:  FlagSimpleWorkerService,
-				Usage: "Specifies generation of optional simple uwe worker logic",
-			},
-			&cli.StringFlag{
-				Name:   FlagSchemaPath,
-				Usage:  "Specifies the tmpl schema path",
-				Hidden: true,
-				Value:  "./scaffolder/templates/schema.yml",
 			},
 		},
 	}
@@ -108,19 +78,9 @@ func scaffoldConfig(c *cli.Context) configs.ScaffolderCfg {
 		projectName = fmt.Sprintf("%s/%s", c.String(FlagDomain), c.String(FlagName))
 	}
 
-	tmplModules := configs.ScaffoldTmplModules{
-		configs.ScaffoldProjectNameKey: projectName,
-		configs.ModuleKeyAPI:           c.Bool(FlagAPIService),
-		configs.ModuleKeyDB:            c.Bool(FlagDBService),
-		configs.ModuleKeySimpleWorker:  c.Bool(FlagSimpleWorkerService),
-	}
-
 	cfg := configs.ScaffolderCfg{
 		OutPath:     c.String(FlagOutputPath),
-		Schema:      project.ReadSchema(c.String(FlagSchemaPath)),
 		ProjectName: projectName,
-		TmplModules: tmplModules,
-		TmplName:    c.String(FlagTmplName),
 	}
 	err := cfg.Validate()
 	if err != nil {

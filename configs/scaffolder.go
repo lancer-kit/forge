@@ -9,21 +9,12 @@ import (
 type ScaffolderCfg struct {
 	OutPath     string
 	ProjectName string
-	Schema      TmplSchemaCfg
-	TmplModules ScaffoldTmplModules
-
-	// TmplName defines the key name of the template that is predefined in
-	// schema.yml file. In case if the TmplName is empty the base template
-	// is grabbed from schema.yml file
-	TmplName string
 }
 
 func (cfg ScaffolderCfg) Validate() error {
 	return validation.ValidateStruct(&cfg,
 		validation.Field(&cfg.OutPath, validation.Required),
-		validation.Field(&cfg.Schema, validation.Required),
 		validation.Field(&cfg.ProjectName, validation.Required),
-		validation.Field(&cfg.TmplModules, validation.Required),
 	)
 }
 
