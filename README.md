@@ -104,7 +104,7 @@ forge new [arguments...]
 |`--repo value, -r value`    | no        | Initialize git repository with origin                             |          -            |
 
 
-Usage of CLI and its options described in [/example](https://github.com/lancer-kit/forge/master/scaffolder/example/Makefile)
+Usage of CLI and its options described in [/example](https://github.com/lancer-kit/forge/blob/scaffolder/scaffolder/example/Makefile)
 
 
 ### Enum
