@@ -1,23 +1,14 @@
 build:
 	go get github.com/lancer-kit/forge
 
-gen-default:
-	./forge new -o="./project" -d="github.com" -n="holmanskih/project"
+scaffold-in-gopath:
+	./forge new --name github.com/out
 
-gen-simple:
-	./forge new -o="./project" -n="holmanskih/project"
+scaffold-with-gomods:
+	./forge new --name github.com/out --gomods out
 
-gen-with-gomod-api:
-	./forge new -o="./project" -d="github.com" -n="holmanskih/project" --api
+scaffold-with-gopath-git:
+	./forge new --name github.com/out --repo https://github.com/scaffolder/test.git
 
-gen-with-gomod-db:
-	./forge new -o="./project" -d="github.com" -n="holmanskih/project" --db
-
-gen:
-	./forge new
-
-clean:
-	rm -r ./project && rm ./forge
-
-test:
-	make build gen
+scaffold-with-gomods-git:
+	scaffold-with-gomods --repo https://github.com/scaffolder/test.git

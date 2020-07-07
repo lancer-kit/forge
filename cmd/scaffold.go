@@ -12,11 +12,10 @@ import (
 )
 
 const (
-	FlagDomain      = "domain"
-	FlagName        = "name"
-	FlagOutputPath  = "output"
-	FlagGoModules   = "gomods"
-	FlagGitInitRepo = "repo"
+	FlagDomain               = "domain"
+	FlagName                 = "name"
+	FlagGoModulesProjectPath = "gomods"
+	FlagGitInitRepo          = "repo"
 )
 
 func NewProjectCmd() cli.Command {
@@ -25,14 +24,9 @@ func NewProjectCmd() cli.Command {
 		Usage:  "generate new project structure from template",
 		Action: scaffoldAction,
 		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  FlagGoModules + ", m",
+			cli.StringFlag{
+				Name:  FlagGoModulesProjectPath + ", m",
 				Usage: "Initializes the go modules with module name in scaffold project",
-			},
-			&cli.StringFlag{
-				Name:  FlagOutputPath + ", o",
-				Usage: "Specifies output dir to scaffold the project",
-				Value: "./out",
 			},
 			&cli.StringFlag{
 				Name:  FlagDomain + ", d",
@@ -54,20 +48,22 @@ func NewProjectCmd() cli.Command {
 func scaffoldAction(c *cli.Context) error {
 	cfg := scaffoldConfig(c)
 
-	err := project.NewProject(&cfg).Scaffold()
+	scaffoldProject := project.NewProject(&cfg)
+	err := scaffoldProject.Scaffold()
 	if err != nil {
 		return fmt.Errorf("failed to scaffold project: %s", err)
 	}
 
-	if c.Bool(FlagGoModules) {
+	projPath := c.String(FlagGoModulesProjectPath)
+	if projPath != "" {
 		log.Printf("running go mod init %s", cfg.ProjectName)
-		err = execInScaffoldPath(c, "go", "mod", "init", cfg.ProjectName)
+		err = execInScaffoldPath(projPath, "go", "mod", "init", cfg.ProjectName)
 		if err != nil {
 			return fmt.Errorf("failed to init go modules: %s", err)
 		}
 
 		log.Println("running go mod tidy")
-		err = execInScaffoldPath(c, "go", "mod", "tidy")
+		err = execInScaffoldPath(projPath, "go", "mod", "tidy")
 		if err != nil {
 			return fmt.Errorf("failed to tidy go modules: %s", err)
 		}
@@ -75,19 +71,19 @@ func scaffoldAction(c *cli.Context) error {
 
 	if c.String(FlagGitInitRepo) != "" {
 		log.Println("git init")
-		err = execInScaffoldPath(c, "git", "init")
+		err = execInScaffoldPath(scaffoldProject.Cfg.OutPath, "git", "init")
 		if err != nil {
 			return fmt.Errorf("failed to init git repository: %s", err)
 		}
 
 		log.Println("git add .")
-		err = execInScaffoldPath(c, "git", "add", ".")
+		err = execInScaffoldPath(scaffoldProject.Cfg.OutPath, "git", "add", ".")
 		if err != nil {
 			return fmt.Errorf("failed to add all chahnges to git repository: %s", err)
 		}
 
 		log.Printf("git add origin: %s", c.String(FlagGitInitRepo))
-		err = execInScaffoldPath(c, "git", "remote", "add", "origin", c.String(FlagGitInitRepo))
+		err = execInScaffoldPath(scaffoldProject.Cfg.OutPath, "git", "remote", "add", "origin", c.String(FlagGitInitRepo))
 		if err != nil {
 			return fmt.Errorf("failed to add remote origin %s: %s", c.String(FlagGitInitRepo), err)
 		}
@@ -103,19 +99,20 @@ func scaffoldConfig(c *cli.Context) configs.ScaffolderCfg {
 		projectName = fmt.Sprintf("%s/%s", c.String(FlagDomain), c.String(FlagName))
 	}
 
-	cfg := configs.ScaffolderCfg{
-		OutPath:     c.String(FlagOutputPath),
-		ProjectName: projectName,
+	var projectPath string
+	if c.String(FlagGoModulesProjectPath) != "" {
+		projectPath = c.String(FlagGoModulesProjectPath)
 	}
-	err := cfg.Validate()
-	if err != nil {
-		log.Fatalf("no all necessary fields for scaffolding the project: %s", err)
+
+	cfg := configs.ScaffolderCfg{
+		OutPath:     projectPath,
+		ProjectName: projectName,
 	}
 	return cfg
 }
 
-func execInScaffoldPath(c *cli.Context, name string, args ...string) error {
+func execInScaffoldPath(projectPath, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
-	cmd.Dir = c.String(FlagOutputPath)
+	cmd.Dir = projectPath
 	return cmd.Run()
 }

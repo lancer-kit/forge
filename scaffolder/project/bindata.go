@@ -4,7 +4,7 @@
 // templates/cmd/db_migrate.go.tpl
 // templates/cmd/main.go.tpl
 // templates/cmd/serve.go.tpl
-// templates/config/cfg.go.tpl
+// templates/config/Cfg.go.tpl
 // templates/config/workers.go.tpl
 // templates/dbschema/main.go.tpl
 // templates/foobar/main.go.tpl
@@ -167,7 +167,7 @@ var _configCfgGoTpl = "\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x56\xcd\x6e\
 func configCfgGoTplBytes() ([]byte, error) {
 	return bindataRead(
 		_configCfgGoTpl,
-		"config/cfg.go.tpl",
+		"config/Cfg.go.tpl",
 	)
 }
 
@@ -177,7 +177,7 @@ func configCfgGoTpl() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/cfg.go.tpl", size: 2748, mode: os.FileMode(420), modTime: time.Unix(1593086784, 0)}
+	info := bindataFileInfo{name: "config/Cfg.go.tpl", size: 2748, mode: os.FileMode(420), modTime: time.Unix(1593086784, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -438,7 +438,7 @@ var _bindata = map[string]func() (*asset, error){
 	"cmd/db_migrate.go.tpl":        cmdDb_migrateGoTpl,
 	"cmd/main.go.tpl":              cmdMainGoTpl,
 	"cmd/serve.go.tpl":             cmdServeGoTpl,
-	"config/cfg.go.tpl":            configCfgGoTpl,
+	"config/Cfg.go.tpl":            configCfgGoTpl,
 	"config/workers.go.tpl":        configWorkersGoTpl,
 	"dbschema/main.go.tpl":         dbschemaMainGoTpl,
 	"foobar/main.go.tpl":           foobarMainGoTpl,
@@ -501,7 +501,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"serve.go.tpl":      &bintree{cmdServeGoTpl, map[string]*bintree{}},
 	}},
 	"config": &bintree{nil, map[string]*bintree{
-		"cfg.go.tpl":     &bintree{configCfgGoTpl, map[string]*bintree{}},
+		"Cfg.go.tpl":     &bintree{configCfgGoTpl, map[string]*bintree{}},
 		"workers.go.tpl": &bintree{configWorkersGoTpl, map[string]*bintree{}},
 	}},
 	"dbschema": &bintree{nil, map[string]*bintree{
