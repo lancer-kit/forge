@@ -96,12 +96,12 @@ forge new [arguments...]
 
 `new` cmd - generates the scaffold project contains following options that described in the table:
 
-|Option                      | Required  | Description                                                       | Default value         |
-|----------------------------|-----------|-------------------------------------------------------------------|-----------------------|
-|` --gomods value, -m value` | no        | Initializes the go modules with module name in by path            |          -            |
-|`--domain value, -d value`  | no        | Specifies project scaffold domain                                 |          -            |
-|`--name value, -n value`    | yes       | Specifies project scaffold name                                   | `"scaffold/project"`  |
-|`--repo value, -r value`    | no        | Initialize git repository with origin                             |          -            |
+|Option                           | Required  | Description                                                                 |
+|---------------------------------|-----------|-----------------------------------------------------------------------------|
+|`--gomods dir path, -m dir path` | no        | dir path to init project with Go Modules from                               |
+|`--domain project domain name, -d project domain name`  | no        | project domain name, (ex. github.com, gitlab.com)    |
+|`--name project name, -n project name`    | yes       | project name                                                       |
+|`--gitorigin git origin, -r git origin`    | no        | git origin to init git repository add all changes to remote origin|
 
 
 Usage of CLI and its options described in [/example](https://github.com/lancer-kit/forge/blob/scaffolder/scaffolder/example/Makefile)

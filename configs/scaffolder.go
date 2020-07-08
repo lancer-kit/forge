@@ -7,13 +7,13 @@ import (
 )
 
 type ScaffolderCfg struct {
-	OutPath     string
+	ProjectPath string
 	ProjectName string
 }
 
 func (cfg ScaffolderCfg) Validate() error {
 	return validation.ValidateStruct(&cfg,
-		validation.Field(&cfg.OutPath, validation.Required),
+		validation.Field(&cfg.ProjectPath, validation.Required),
 		validation.Field(&cfg.ProjectName, validation.Required),
 	)
 }
