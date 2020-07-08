@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/urfave/cli"
 
 	"github.com/lancer-kit/forge/configs"
@@ -14,10 +15,12 @@ import (
 )
 
 const (
-	FlagProjectDomain         = "domain"
-	FlagProjectName           = "name"
-	FlagProjectPathWithGoMods = "gomods"
-	FlagGitOrigin             = "gitorigin"
+	FlagGoModsProjectName   = "gomods"
+	FlagGoModsProjectPath   = "outdir"
+	FlagProjectOriginGoPath = "gopath"
+	FlagGitOrigin           = "gitorigin"
+
+	CliMsgSuccess = "New project was successfully generated."
 )
 
 func NewProjectCmd() cli.Command {
@@ -27,16 +30,16 @@ func NewProjectCmd() cli.Command {
 		Action: scaffoldAction,
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  FlagProjectPathWithGoMods + ", m",
-				Usage: "`dir path` to init project with Go Modules from ",
+				Name:  FlagGoModsProjectPath + ", o",
+				Usage: "`dir path` to init project with Go Modules",
+			},
+			cli.StringFlag{
+				Name:  FlagGoModsProjectName + ", m",
+				Usage: "`project name` of project цшер Go Modules",
 			},
 			&cli.StringFlag{
-				Name:  FlagProjectDomain + ", d",
-				Usage: "`project domain name`, (ex. github.com, gitlab.com)",
-			},
-			&cli.StringFlag{
-				Name:  FlagProjectName + ", n",
-				Usage: "`project name`",
+				Name:  FlagProjectOriginGoPath + ", g",
+				Usage: "`project domain name`",
 			},
 			&cli.StringFlag{
 				Name:  FlagGitOrigin + ", r",
@@ -52,7 +55,6 @@ func scaffoldAction(c *cli.Context) error {
 		log.Println(err)
 		return fmt.Errorf("failed to parse scaffold cmd flags: %s", err)
 	}
-	log.Println(cfg)
 
 	scaffoldProject := project.NewProject(cfg)
 	err = scaffoldProject.Scaffold()
@@ -60,7 +62,7 @@ func scaffoldAction(c *cli.Context) error {
 		return fmt.Errorf("failed to scaffold project: %s", err)
 	}
 
-	projectPath := c.String(FlagProjectPathWithGoMods)
+	projectPath := c.String(FlagGoModsProjectPath)
 	if projectPath != "" {
 		log.Printf("running go mod init %s", cfg.ProjectName)
 		err = execInScaffoldPath(projectPath, "go", "mod", "init", cfg.ProjectName)
@@ -74,7 +76,6 @@ func scaffoldAction(c *cli.Context) error {
 			return fmt.Errorf("failed to tidy go modules: %s", err)
 		}
 	}
-
 	if c.String(FlagGitOrigin) != "" {
 		log.Println("git init")
 		err = execInScaffoldPath(scaffoldProject.Cfg.ProjectPath, "git", "init")
@@ -94,6 +95,12 @@ func scaffoldAction(c *cli.Context) error {
 			return fmt.Errorf("failed to add remote origin %s: %s", c.String(FlagGitOrigin), err)
 		}
 	}
+
+	path, err := filepath.Abs(scaffoldProject.Cfg.ProjectPath)
+	if err != nil {
+		return err
+	}
+	log.Printf("%s Generated project [%s] in path: [%s]", CliMsgSuccess, scaffoldProject.Cfg.ProjectName, path)
 	return nil
 }
 
@@ -103,52 +110,50 @@ func execInScaffoldPath(projectPath, name string, args ...string) error {
 	return cmd.Run()
 }
 
-type RepositoryDomain string
-
-const (
-	DomainGitHub RepositoryDomain = "github.com"
-	DomainGitLab RepositoryDomain = "gitlab.com"
-)
-
 type ScaffoldCliValues struct {
-	dirPathWithGoMods string
-	projectDomain     RepositoryDomain
-	name              string
-	gitOrigin         string
+	projectPathWithGoMods string
+	projectNameWithGoMods string
+	projectGoPathOrigin   string
+	gitOrigin             string
 }
 
 func (c ScaffoldCliValues) Validate() error {
+	if c.projectNameWithGoMods == "" && c.projectGoPathOrigin == "" {
+		return fmt.Errorf("specify the way of project generation gomod(--%s --%s flags) (gopath --%s flag)",
+			FlagGoModsProjectPath, FlagGoModsProjectName, FlagProjectOriginGoPath)
+	}
 	return validation.Errors{
-		FlagProjectName:   validation.Validate(&c.name, validation.Required),
-		FlagProjectDomain: validation.Validate(&c.projectDomain, validation.In(DomainGitHub, DomainGitLab)),
-		FlagGitOrigin:     validation.Validate(&c.gitOrigin),
-		FlagProjectPathWithGoMods: validation.Validate(c.dirPathWithGoMods,
+		FlagGoModsProjectName: validation.Validate(&c.projectNameWithGoMods, validation.When(
+			c.projectPathWithGoMods != "", validation.Required,
 			validation.Match(regexp.MustCompile(`^[^-].*`))),
+		),
+		FlagGoModsProjectPath: validation.Validate(&c.projectPathWithGoMods, validation.When(
+			c.projectNameWithGoMods != "", validation.Required),
+		),
+		FlagGitOrigin:           validation.Validate(&c.gitOrigin),
+		FlagProjectOriginGoPath: validation.Validate(&c.gitOrigin),
 	}.Filter()
 }
 
 func scaffoldConfig(c *cli.Context) (*configs.ScaffolderCfg, error) {
 	flagsValues := &ScaffoldCliValues{
-		dirPathWithGoMods: c.String(FlagProjectPathWithGoMods),
-		projectDomain:     RepositoryDomain(c.String(FlagProjectDomain)),
-		name:              c.String(FlagProjectName),
-		gitOrigin:         c.String(FlagGitOrigin),
+		projectPathWithGoMods: c.String(FlagGoModsProjectPath),
+		projectNameWithGoMods: c.String(FlagGoModsProjectName),
+		projectGoPathOrigin:   c.String(FlagProjectOriginGoPath),
+		gitOrigin:             c.String(FlagGitOrigin),
 	}
 	err := flagsValues.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("wrong cli flag: %s", err)
+		return nil, fmt.Errorf("cli error: %s", err)
 	}
 
 	cfg := new(configs.ScaffolderCfg)
 
-	if flagsValues.projectDomain == "" {
-		cfg.ProjectName = flagsValues.name
+	if flagsValues.projectNameWithGoMods != "" {
+		cfg.ProjectName = flagsValues.projectNameWithGoMods
+		cfg.ProjectPath = flagsValues.projectPathWithGoMods
 	} else {
-		cfg.ProjectName = fmt.Sprintf("%s/%s", flagsValues.projectDomain, flagsValues.name)
-	}
-
-	if c.String(FlagProjectPathWithGoMods) != "" {
-		cfg.ProjectPath = c.String(FlagProjectPathWithGoMods)
+		cfg.ProjectName = flagsValues.projectGoPathOrigin
 	}
 	return cfg, nil
 }
