@@ -6,7 +6,7 @@ import (
 
 	"{{.project_name}}/config"
 	{{if .api}}"{{.project_name}}/workers/api"{{end}}
-	{{if .simple_worker}}"{{.project_name}}/workers/foobar"{{end}}
+	{{.project_name}}/workers/foobar"
 )
 
 func InitChief(logger *logrus.Entry, cfg *config.Cfg) uwe.Chief {
@@ -30,6 +30,6 @@ func InitChief(logger *logrus.Entry, cfg *config.Cfg) uwe.Chief {
     {{if or .api .simple_worker}}logger = logger.WithField("app_layer", "workers"){{end}}
 
     {{if .api}}chief.AddWorker(config.WorkerAPIServer, api.GetServer(cfg, logger.WithField("worker", config.WorkerFooBar))){{end}}
-	{{if .simple_worker}}chief.AddWorker(config.WorkerFooBar, foobar.NewWorker(config.WorkerFooBar, logger.WithField("worker", config.WorkerFooBar))){{end}}
+	chief.AddWorker(config.WorkerFooBar, foobar.NewWorker(config.WorkerFooBar, logger.WithField("worker", config.WorkerFooBar)))
 	return chief
 }

@@ -98,10 +98,10 @@ forge new [arguments...]
 
 |Option                           | Required  | Description                                                                 |
 |---------------------------------|-----------|-----------------------------------------------------------------------------|
-|`--gomods dir path, -m dir path` | no        | dir path to init project with Go Modules from                               |
-|`--domain project domain name, -d project domain name`  | no        | project domain name, (ex. github.com, gitlab.com)    |
-|`--name project name, -n project name`    | yes       | project name                                                       |
-|`--gitorigin git origin, -r git origin`    | no        | git origin to init git repository add all changes to remote origin|
+|`--gomods project name, -m project name` | no        | project name of project with Go Modules (ex. forge) `[$GOMOD_PROJECT_NAME]` |
+|`--outdir dir path, -o dir path`  | no        | project name of project with Go Modules (ex. forge) `[$GOMOD_PROJECT_NAME]`    |
+|`--gopath project domain name, -g project domain name`    | yes       | project domain name (ex. github.com/gitnetwork.com/team/project) `[$GOPATH_PROJECT_DOMAIN]` |
+|`--gitorigin git origin, -r git origin`    | no        | git origin to init git repository add all changes to remote origin `[$GIT_ORIGIN]`|
 
 
 Usage of CLI and its options described in [/example](https://github.com/lancer-kit/forge/blob/scaffolder/scaffolder/example/Makefile)

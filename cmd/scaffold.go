@@ -30,20 +30,24 @@ func NewProjectCmd() cli.Command {
 		Action: scaffoldAction,
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  FlagGoModsProjectPath + ", o",
-				Usage: "`dir path` to init project with Go Modules",
+				Name:   FlagGoModsProjectPath + ", o",
+				Usage:  "`dir path` to init project with Go Modules (ex. ./scaffold)",
+				EnvVar: "GOMOD_PROJECT_PATH",
 			},
 			cli.StringFlag{
-				Name:  FlagGoModsProjectName + ", m",
-				Usage: "`project name` of project цшер Go Modules",
+				Name:   FlagGoModsProjectName + ", m",
+				Usage:  "`project name` of project with Go Modules (ex. forge)",
+				EnvVar: "GOMOD_PROJECT_NAME",
 			},
 			&cli.StringFlag{
-				Name:  FlagProjectOriginGoPath + ", g",
-				Usage: "`project domain name`",
+				Name:   FlagProjectOriginGoPath + ", g",
+				Usage:  "`project domain name` (ex. github.com/gitnetwork.com/team/project)",
+				EnvVar: "GOPATH_PROJECT_DOMAIN",
 			},
 			&cli.StringFlag{
-				Name:  FlagGitOrigin + ", r",
-				Usage: "`git origin` to init git repository add all changes to remote origin",
+				Name:   FlagGitOrigin + ", r",
+				Usage:  "`git origin` to init git repository add all changes to remote origin",
+				EnvVar: "GIT_ORIGIN",
 			},
 		},
 	}
