@@ -7,8 +7,8 @@ type QI interface {
 	db.Transactional
 
 	/*
-		Here is needed to add the query interfaces
-	 */
+      TODO: Here is needed to add the query interfaces
+    */
 }
 
 // Q implementation of the `QI` interface.
