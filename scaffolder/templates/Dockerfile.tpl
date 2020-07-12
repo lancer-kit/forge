@@ -8,7 +8,7 @@ ARG CONFIG="master"
 
 #ENV GOPROXY=direct
 ENV GO111MODULE=on
-ENV GOPRIVATE=*.inn4science.com,gitlab.com
+ENV GOPRIVATE=gitlab.com
 
 WORKDIR /service
 ADD . .
@@ -29,5 +29,5 @@ WORKDIR /
 COPY --from=build-env /app /
 COPY --from=build-env /config.yaml /
 
-# Run delve
+# Run app
 CMD ["/app", "serve"]

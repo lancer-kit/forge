@@ -19,9 +19,9 @@ github.com/stretchr/testify/assert
 # github.com/urfave/cli v1.20.0
 github.com/urfave/cli
 # golang.org/x/tools v0.0.0-20181026183834-f60e5f99f081
-golang.org/x/tools/go/loader
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/buildutil
 golang.org/x/tools/go/internal/cgo
+golang.org/x/tools/go/loader
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2

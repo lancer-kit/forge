@@ -10,6 +10,7 @@ type EnumsConfig struct {
 	AddTypePrefix bool
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (config *EnumsConfig) Validate() error {
 	if err := config.BaseConfig.Validate(); err != nil {
 		return err

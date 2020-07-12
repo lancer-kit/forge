@@ -121,6 +121,7 @@ type ScaffoldCliValues struct {
 	gitOrigin             string
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (c ScaffoldCliValues) Validate() error {
 	if c.projectNameWithGoMods == "" && c.projectGoPathOrigin == "" {
 		return fmt.Errorf("specify the way of project generation gomod(--%s --%s flags) (gopath --%s flag)",

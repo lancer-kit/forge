@@ -147,7 +147,7 @@ type Asset struct {
 	Func string // Function name for the procedure returning the asset contents.
 }
 
-// validate ensures the config has sane values.
+// Validate ensures the config has sane values.
 // Part of which means checking if certain file/directory paths exist.
 func (c *BindataConfig) Validate() error {
 	if len(c.Package) == 0 {

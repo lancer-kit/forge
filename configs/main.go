@@ -16,6 +16,7 @@ type BaseConfig struct {
 	OutputPrefix string
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (config *BaseConfig) Validate() error {
 	if len(config.Types) == 0 {
 		return fmt.Errorf("type: should not be empty")

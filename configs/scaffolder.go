@@ -3,7 +3,7 @@ package configs
 import (
 	"errors"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type ScaffolderCfg struct {
@@ -11,6 +11,7 @@ type ScaffolderCfg struct {
 	ProjectName string
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (cfg ScaffolderCfg) Validate() error {
 	return validation.ValidateStruct(&cfg,
 		validation.Field(&cfg.ProjectPath, validation.Required),
@@ -24,6 +25,7 @@ type tmplModuleOpts struct {
 	Path string `yml:"path"`
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (s tmplModuleOpts) Validate() error {
 	return validation.ValidateStruct(&s,
 		validation.Field(&s.Path, validation.Required),
@@ -41,6 +43,7 @@ type TmplSchemaCfg struct {
 	Specs map[string]SpecCfg `yml:"specs"`
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (cfg TmplSchemaCfg) Validate() error {
 	err := validation.ValidateStruct(&cfg,
 		validation.Field(&cfg.Base, validation.Required),
@@ -68,6 +71,7 @@ type SpecCfg struct {
 	Modules map[ScaffoldTmplKey]tmplModuleOpts `yml:"modules"`
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (cfg SpecCfg) Validate() error {
 	return validation.ValidateStruct(&cfg,
 		validation.Field(&cfg.Path, validation.Required),

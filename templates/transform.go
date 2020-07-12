@@ -16,6 +16,7 @@ var (
 	TransformRuleNone  TransformRule = "none"
 )
 
+// Validate is an implementation of Validatable interface.
 func (rule TransformRule) Validate() error {
 	switch rule {
 	case

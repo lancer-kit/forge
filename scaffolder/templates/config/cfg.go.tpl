@@ -3,7 +3,7 @@ package config
 import (
 	"io/ioutil"
 
-	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/lancer-kit/armory/log"
 	"github.com/lancer-kit/uwe/v2"
 	{{if .api}}
