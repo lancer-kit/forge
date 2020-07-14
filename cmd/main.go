@@ -3,8 +3,9 @@ package cmd
 import (
 	"strings"
 
-	"github.com/lancer-kit/forge/configs"
 	"github.com/urfave/cli"
+
+	"github.com/lancer-kit/forge/configs"
 )
 
 func baseConfig(c *cli.Context) configs.BaseConfig {

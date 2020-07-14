@@ -4,6 +4,18 @@
 
 **forge** is a tool for automating the creation of methods that satisfy some built-in interfaces or those defined in the templates.
 
+## Table of content 
+
+1. [Usage](#usage)
+
+    1. [Scaffolder](#scaffolder)
+    2. [Enum](#enum)
+    3. [Model](#model)
+    4. [Bindata](#bindata)
+    5. [Project](#project)
+    
+
+
 # Usage 
 
 **forge** can be run from console in directory with target type or with help `go generate`:
@@ -39,6 +51,7 @@ VERSION:
    2.5
 
 COMMANDS:
+     new      generate new project structure from template
      enum     generate var and methods for the iota-enums
      model    generate code for structure by template
      bindata  forge bindata <options>
@@ -48,6 +61,51 @@ GLOBAL OPTIONS:
    --help, -h     show help
    --version, -v  print the version
 ```
+### Scaffolder
+
+##### CLI tool for scaffolding the Golang project
+
+#### Templates 
+The Scaffold project uses Go Modules.
+The whole scaffold project uses these modules structure:
+- `github.com/go-chi/chi`
+- `github.com/go-chi/cors`
+- `github.com/go-ozzo/ozzo-validation`
+- `github.com/lancer-kit/armory`
+- `github.com/lancer-kit/uwe/v2`
+- `github.com/rubenv/sql-migrate`
+- `github.com/sirupsen/logrus`
+- `github.com/urfave/cli`
+- `gopkg.in/yaml.v2`
+
+Templates are use [lancer-kit](https://github.com/lancer-kit) `armory` package for DB and log management and
+`uwe/v2` package to provider worker pool functionality in the project.
+
+The scaffolder may generate the go mods with project name and tidy them on `--gomods` flag.
+
+
+#### Example
+```
+go get github.com/lancer-kit/forge
+```
+
+CLI Usage
+```
+forge new [arguments...]
+```
+
+`new` cmd - generates the scaffold project contains following options that described in the table:
+
+|Option                           | Required  | Description                                                                 |
+|---------------------------------|-----------|-----------------------------------------------------------------------------|
+|`--gomods project name, -m project name` | no        | project name of project with Go Modules (ex. forge) `[$GOMOD_PROJECT_NAME]` |
+|`--outdir dir path, -o dir path`  | no        | project name of project with Go Modules (ex. forge) `[$GOMOD_PROJECT_NAME]`    |
+|`--gopath project domain name, -g project domain name`    | yes       | project domain name (ex. github.com/gitnetwork.com/team/project) `[$GOPATH_PROJECT_DOMAIN]` |
+|`--gitorigin git origin, -r git origin`    | no        | git origin to init git repository add all changes to remote origin `[$GIT_ORIGIN]`|
+
+
+Usage of CLI and its options described in [/example](https://github.com/lancer-kit/forge/blob/scaffolder/scaffolder/example/Makefile)
+
 
 ### Enum
 
@@ -143,6 +201,8 @@ OPTIONS:
    -i value          List of input directories/files
 ```
 
+
+### Project
 
 # ToDo
 

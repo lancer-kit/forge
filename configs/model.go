@@ -10,6 +10,7 @@ type ModelConfig struct {
 	TPath string
 }
 
+// Validate is an implementation of Validatable interface from ozzo-validation.
 func (config *ModelConfig) Validate() error {
 	if err := config.BaseConfig.Validate(); err != nil {
 		return err

@@ -6,7 +6,6 @@ import (
 
 const (
 	typesFlag     = "type"
-	tPathFlag     = "tmpl"
 	mergeFlag     = "merge"
 	suffixFlag    = "suffix"
 	prefixFlag    = "prefix"

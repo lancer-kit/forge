@@ -1,0 +1,3 @@
+package scaffolder
+
+//go:generate go-bindata -nomemcopy -pkg project -prefix templates/ -ignore schema.yml -o project/bindata.go templates/...
