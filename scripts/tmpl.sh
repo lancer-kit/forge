@@ -1,3 +1,3 @@
 #!/bin/zsh
 
-git clone https://github.com/lancer-kit/forge-templates.git ../.forge
+git clone -b optional-tmpl-scaffolding  https://github.com/lancer-kit/forge-templates.git ../.forge
