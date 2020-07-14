@@ -41,7 +41,7 @@ func NewProjectCmd() cli.Command {
 			},
 			&cli.StringFlag{
 				Name:   FlagProjectOriginGoPath + ", g",
-				Usage:  "`project domain name` (ex. github.com/gitnetwork.com/team/project)",
+				Usage:  "`project domain name` (ex. gitlab.com/team/project)",
 				EnvVar: "GOPATH_PROJECT_DOMAIN",
 			},
 			&cli.StringFlag{

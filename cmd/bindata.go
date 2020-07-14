@@ -26,67 +26,69 @@ const (
 	inputFlag      = "i"
 )
 
-var BindataCmd = cli.Command{
-	Name:  "bindata",
-	Usage: "forge bindata <options>",
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name: debugFlag,
-			Usage: "Do not embed the assets, but provide the embedding API. " +
-				"Contents will still be loaded from disk.",
+func BindataCmd() cli.Command {
+	return cli.Command{
+		Name:  "bindata",
+		Usage: "forge bindata <options>",
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name: debugFlag,
+				Usage: "Do not embed the assets, but provide the embedding API. " +
+					"Contents will still be loaded from disk.",
+			},
+			cli.BoolFlag{
+				Name: devFlag,
+				Usage: "Similar to debug, but does not emit absolute paths. " +
+					"Expects a rootDir variable to already exist in the generated code's package.",
+			},
+			cli.BoolFlag{
+				Name: nomemcopyFlag,
+				Usage: "Use a .rodata hack to get rid of unnecessary memcopies. " +
+					"Refer to the documentation to see what implications this carries.",
+			},
+			cli.BoolFlag{
+				Name:  nocompressFlag,
+				Usage: "Assets will *not* be GZIP compressed when this flag is specified.",
+			},
+			cli.BoolFlag{
+				Name:  nometadataFlag,
+				Usage: "Assets will not preserve size, mode, and modtime info.",
+			},
+			cli.StringFlag{
+				Name:  tagsFlag,
+				Usage: "Optional set of build tags to include.",
+			},
+			cli.StringFlag{
+				Name:  prefixFlag,
+				Usage: "Optional path prefix to strip off asset names.",
+			},
+			cli.StringFlag{
+				Name:  pkgFlag,
+				Usage: "Package name to use in the generated code.",
+			},
+			cli.StringFlag{
+				Name:  outputFlag,
+				Usage: "Optional name of the output file to be generated.",
+			},
+			cli.UintFlag{
+				Name:  modeFlag,
+				Usage: "Optional file mode override for all files.",
+			},
+			cli.Int64Flag{
+				Name:  modetimeFlag,
+				Usage: "Optional modification unix timestamp override for all files.",
+			},
+			cli.StringSliceFlag{
+				Name:  ignoreFlag,
+				Usage: "Regex pattern to ignore",
+			},
+			cli.StringSliceFlag{
+				Name:  inputFlag,
+				Usage: "List of input directories/files",
+			},
 		},
-		cli.BoolFlag{
-			Name: devFlag,
-			Usage: "Similar to debug, but does not emit absolute paths. " +
-				"Expects a rootDir variable to already exist in the generated code's package.",
-		},
-		cli.BoolFlag{
-			Name: nomemcopyFlag,
-			Usage: "Use a .rodata hack to get rid of unnecessary memcopies. " +
-				"Refer to the documentation to see what implications this carries.",
-		},
-		cli.BoolFlag{
-			Name:  nocompressFlag,
-			Usage: "Assets will *not* be GZIP compressed when this flag is specified.",
-		},
-		cli.BoolFlag{
-			Name:  nometadataFlag,
-			Usage: "Assets will not preserve size, mode, and modtime info.",
-		},
-		cli.StringFlag{
-			Name:  tagsFlag,
-			Usage: "Optional set of build tags to include.",
-		},
-		cli.StringFlag{
-			Name:  prefixFlag,
-			Usage: "Optional path prefix to strip off asset names.",
-		},
-		cli.StringFlag{
-			Name:  pkgFlag,
-			Usage: "Package name to use in the generated code.",
-		},
-		cli.StringFlag{
-			Name:  outputFlag,
-			Usage: "Optional name of the output file to be generated.",
-		},
-		cli.UintFlag{
-			Name:  modeFlag,
-			Usage: "Optional file mode override for all files.",
-		},
-		cli.Int64Flag{
-			Name:  modetimeFlag,
-			Usage: "Optional modification unix timestamp override for all files.",
-		},
-		cli.StringSliceFlag{
-			Name:  ignoreFlag,
-			Usage: "Regex pattern to ignore",
-		},
-		cli.StringSliceFlag{
-			Name:  inputFlag,
-			Usage: "List of input directories/files",
-		},
-	},
-	Action: bindataAction,
+		Action: bindataAction,
+	}
 }
 
 func bindataAction(c *cli.Context) error {

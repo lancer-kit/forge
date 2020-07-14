@@ -7,7 +7,6 @@ require (
 	github.com/btcsuite/goleveldb v1.0.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/camelcase v1.0.0
-	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/pkg/errors v0.8.0
 	github.com/stretchr/testify v1.4.0

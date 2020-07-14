@@ -14,9 +14,9 @@ func main() {
 	app.Name = "forge"
 	app.Usage = "cli tool and generator from lancer-kit"
 	app.Commands = cli.Commands{
-		cmd.EnumCmd,
-		cmd.ModelCmd,
-		cmd.BindataCmd,
+		cmd.EnumCmd(),
+		cmd.ModelCmd(),
+		cmd.BindataCmd(),
 		cmd.NewProjectCmd(),
 	}
 

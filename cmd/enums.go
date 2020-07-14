@@ -8,23 +8,25 @@ import (
 	"github.com/lancer-kit/forge/templates"
 )
 
-var EnumCmd = cli.Command{
-	Name:  "enum",
-	Usage: "generate var and methods for the iota-enums",
-	Flags: append(baseFlags,
+func EnumCmd() cli.Command {
+	return cli.Command{
+		Name:  "enum",
+		Usage: "generate var and methods for the iota-enums",
+		Flags: append(baseFlags,
 
-		cli.StringFlag{
-			Name:  transformFlag,
-			Usage: "way to convert constants to a string;",
-			Value: "none",
-		},
+			cli.StringFlag{
+				Name:  transformFlag,
+				Usage: "way to convert constants to a string;",
+				Value: "none",
+			},
 
-		cli.BoolFlag{
-			Name:  tprefixFlag,
-			Usage: "keep typename prefix in string values or not;",
-		},
-	),
-	Action: enumsAction,
+			cli.BoolFlag{
+				Name:  tprefixFlag,
+				Usage: "keep typename prefix in string values or not;",
+			},
+		),
+		Action: enumsAction,
+	}
 }
 
 func enumsAction(c *cli.Context) error {
