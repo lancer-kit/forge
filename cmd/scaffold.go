@@ -9,7 +9,9 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/urfave/cli"
+	"gopkg.in/yaml.v2"
 
+	forge "github.com/lancer-kit/forge/.forge"
 	"github.com/lancer-kit/forge/configs"
 	"github.com/lancer-kit/forge/scaffolder/project"
 )
@@ -19,6 +21,7 @@ const (
 	FlagGoModsProjectPath   = "outdir"
 	FlagProjectOriginGoPath = "gopath"
 	FlagGitOrigin           = "gitorigin"
+	FlagWithForgeTmpl       = "forgetmpl"
 
 	CliMsgSuccess = "New project was successfully generated."
 )
@@ -48,6 +51,10 @@ func NewProjectCmd() cli.Command {
 				Name:   FlagGitOrigin + ", r",
 				Usage:  "`git origin` to init git repository add all changes to remote origin",
 				EnvVar: "GIT_ORIGIN",
+			},
+			&cli.StringFlag{
+				Name:  FlagWithForgeTmpl + ", f",
+				Usage: "`forge tmpl key name` to init project by predefined tmpl from `forge-templates` repo (ex. foobar-tmpl)",
 			},
 		},
 	}
@@ -119,6 +126,7 @@ type ScaffoldCliValues struct {
 	projectNameWithGoMods string
 	projectGoPathOrigin   string
 	gitOrigin             string
+	withForgeTmpl         string
 }
 
 // Validate is an implementation of Validatable interface from ozzo-validation.
@@ -146,6 +154,7 @@ func scaffoldConfig(c *cli.Context) (*configs.ScaffolderCfg, error) {
 		projectNameWithGoMods: c.String(FlagGoModsProjectName),
 		projectGoPathOrigin:   c.String(FlagProjectOriginGoPath),
 		gitOrigin:             c.String(FlagGitOrigin),
+		withForgeTmpl:         c.String(FlagWithForgeTmpl),
 	}
 	err := flagsValues.Validate()
 	if err != nil {
@@ -159,6 +168,31 @@ func scaffoldConfig(c *cli.Context) (*configs.ScaffolderCfg, error) {
 		cfg.ProjectPath = flagsValues.projectPathWithGoMods
 	} else {
 		cfg.ProjectName = flagsValues.projectGoPathOrigin
+	}
+
+	var forgeTmplKeyName = flagsValues.withForgeTmpl
+	if forgeTmplKeyName != "" {
+		cfg.ForgeTmplKeyName = forgeTmplKeyName
+
+		// Get Forge schema to config
+		asset, err := forge.Asset(configs.ForgeSchemaAssetName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load the %s asset: %s", configs.ForgeSchemaAssetName, err)
+		}
+
+		forgeSchema := map[string]configs.ForgeTmpl{}
+		err = yaml.Unmarshal(asset, &forgeSchema)
+		if err != nil {
+			log.Println(err)
+
+			return nil, fmt.Errorf("failed to unmarshal the forge schema: %s", err)
+		}
+		forgeTmpl, ok := forgeSchema[forgeTmplKeyName]
+		if !ok {
+			return nil, fmt.Errorf("failed to get %s tmpl from forge schema: %s", forgeTmplKeyName, err)
+
+		}
+		cfg.ForgeTmpl = &forgeTmpl
 	}
 	return cfg, nil
 }
