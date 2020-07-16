@@ -6,3 +6,6 @@ scaffold-with-gomods:
 
 scaffold-with-gopath-git:
 	./forge new --gopath github.com/scaffolder/test --gitorigin https://github.com/scaffolder/test.git
+
+scaffold-with-forge-tmpl:
+	./forge new  --gomods forga --outdir forga --forgetmpl foobar-tmpl

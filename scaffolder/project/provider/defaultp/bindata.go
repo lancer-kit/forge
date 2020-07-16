@@ -624,43 +624,43 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	".gitattributes.tpl": &bintree{GitattributesTpl, map[string]*bintree{}},
-	".gitignore.tpl":     &bintree{GitignoreTpl, map[string]*bintree{}},
-	"Dockerfile.tpl":     &bintree{dockerfileTpl, map[string]*bintree{}},
-	"api": &bintree{nil, map[string]*bintree{
-		"main.go.tpl": &bintree{apiMainGoTpl, map[string]*bintree{}},
+	".gitattributes.tpl": {GitattributesTpl, map[string]*bintree{}},
+	".gitignore.tpl":     {GitignoreTpl, map[string]*bintree{}},
+	"Dockerfile.tpl":     {dockerfileTpl, map[string]*bintree{}},
+	"api": {nil, map[string]*bintree{
+		"main.go.tpl": {apiMainGoTpl, map[string]*bintree{}},
 	}},
-	"build.sh.tpl": &bintree{buildShTpl, map[string]*bintree{}},
-	"cmd": &bintree{nil, map[string]*bintree{
-		"db_migrate.go.tpl": &bintree{cmdDb_migrateGoTpl, map[string]*bintree{}},
-		"main.go.tpl":       &bintree{cmdMainGoTpl, map[string]*bintree{}},
-		"serve.go.tpl":      &bintree{cmdServeGoTpl, map[string]*bintree{}},
+	"build.sh.tpl": {buildShTpl, map[string]*bintree{}},
+	"cmd": {nil, map[string]*bintree{
+		"db_migrate.go.tpl": {cmdDb_migrateGoTpl, map[string]*bintree{}},
+		"main.go.tpl":       {cmdMainGoTpl, map[string]*bintree{}},
+		"serve.go.tpl":      {cmdServeGoTpl, map[string]*bintree{}},
 	}},
-	"config": &bintree{nil, map[string]*bintree{
-		"cfg.go.tpl":     &bintree{configCfgGoTpl, map[string]*bintree{}},
-		"version.go.tpl": &bintree{configVersionGoTpl, map[string]*bintree{}},
-		"workers.go.tpl": &bintree{configWorkersGoTpl, map[string]*bintree{}},
+	"config": {nil, map[string]*bintree{
+		"cfg.go.tpl":     {configCfgGoTpl, map[string]*bintree{}},
+		"version.go.tpl": {configVersionGoTpl, map[string]*bintree{}},
+		"workers.go.tpl": {configWorkersGoTpl, map[string]*bintree{}},
 	}},
-	"dbschema": &bintree{nil, map[string]*bintree{
-		"main.go.tpl": &bintree{dbschemaMainGoTpl, map[string]*bintree{}},
+	"dbschema": {nil, map[string]*bintree{
+		"main.go.tpl": {dbschemaMainGoTpl, map[string]*bintree{}},
 	}},
-	"docker-compose.yaml.tpl": &bintree{dockerComposeYamlTpl, map[string]*bintree{}},
-	"foobar": &bintree{nil, map[string]*bintree{
-		"main.go.tpl": &bintree{foobarMainGoTpl, map[string]*bintree{}},
+	"docker-compose.yaml.tpl": {dockerComposeYamlTpl, map[string]*bintree{}},
+	"foobar": {nil, map[string]*bintree{
+		"main.go.tpl": {foobarMainGoTpl, map[string]*bintree{}},
 	}},
-	"golangci.yml.tpl": &bintree{golangciYmlTpl, map[string]*bintree{}},
-	"initialization": &bintree{nil, map[string]*bintree{
-		"initdb.go.tpl": &bintree{initializationInitdbGoTpl, map[string]*bintree{}},
-		"main.go.tpl":   &bintree{initializationMainGoTpl, map[string]*bintree{}},
+	"golangci.yml.tpl": {golangciYmlTpl, map[string]*bintree{}},
+	"initialization": {nil, map[string]*bintree{
+		"initdb.go.tpl": {initializationInitdbGoTpl, map[string]*bintree{}},
+		"main.go.tpl":   {initializationMainGoTpl, map[string]*bintree{}},
 	}},
-	"main.go.tpl": &bintree{mainGoTpl, map[string]*bintree{}},
-	"models": &bintree{nil, map[string]*bintree{
-		"query.go.tpl": &bintree{modelsQueryGoTpl, map[string]*bintree{}},
+	"main.go.tpl": {mainGoTpl, map[string]*bintree{}},
+	"models": {nil, map[string]*bintree{
+		"query.go.tpl": {modelsQueryGoTpl, map[string]*bintree{}},
 	}},
-	"workers": &bintree{nil, map[string]*bintree{
-		"chief.go.tpl": &bintree{workersChiefGoTpl, map[string]*bintree{}},
-		"foobar": &bintree{nil, map[string]*bintree{
-			"main.go.tpl": &bintree{workersFoobarMainGoTpl, map[string]*bintree{}},
+	"workers": {nil, map[string]*bintree{
+		"chief.go.tpl": {workersChiefGoTpl, map[string]*bintree{}},
+		"foobar": {nil, map[string]*bintree{
+			"main.go.tpl": {workersFoobarMainGoTpl, map[string]*bintree{}},
 		}},
 	}},
 }}

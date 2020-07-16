@@ -20,10 +20,10 @@ type BindataProvider interface {
 	GenerateTemplates(name string, path string, data interface{}) error
 }
 
-func NewBindataProvider(provider Name) BindataProvider {
+func NewBindataProvider(provider Name, assetNamePrefix string) BindataProvider {
 	switch provider {
 	case Forge:
-		return &forge.ForgeProvider{}
+		return &forge.ForgeProvider{AssetNamePrefix: assetNamePrefix}
 	case Default:
 		return &defaultp.DefaultProvider{}
 	}

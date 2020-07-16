@@ -4,25 +4,39 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	forge "github.com/lancer-kit/forge/.forge"
+	"github.com/lancer-kit/forge/configs"
 )
 
-type ForgeProvider struct{}
+type ForgeProvider struct {
+	AssetNamePrefix string
+}
 
 func (p *ForgeProvider) Scaffold(outPath, projectName string) error {
 	for _, fileName := range forge.AssetNames() {
-		file := filepath.Join(outPath, fileName)
+		if filepath.Ext(fileName) == filepath.Ext(configs.ForgeSchemaAssetName) {
+			continue
+		}
+		fileNameNoPrefix, err := filepath.Rel(p.AssetNamePrefix, fileName)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		file := filepath.Join(outPath, fileNameNoPrefix)
 		genPath := strings.TrimSuffix(file, filepath.Ext(file))
 
 		schema := map[string]interface{}{
 			"project_name": projectName,
 		}
-		err := p.GenerateTemplates(fileName, genPath, schema)
+
+		err = p.GenerateTemplates(fileName, genPath, schema)
 		if err != nil {
 			return fmt.Errorf("failed to restore tmpl: %s", err)
 		}

@@ -83,9 +83,9 @@ func NewProject(cfg *configs.ScaffolderCfg) *Project {
 
 	// set bindata provider
 	if p.Cfg.ForgeTmplKeyName != "" {
-		p.Provider = provider.NewBindataProvider(provider.Forge)
+		p.Provider = provider.NewBindataProvider(provider.Forge, p.Cfg.ForgeTmpl.AssetPrefix)
 	} else {
-		p.Provider = provider.NewBindataProvider(provider.Default)
+		p.Provider = provider.NewBindataProvider(provider.Default, "")
 	}
 
 	log.Printf("path %s", p.Cfg.ProjectPath)

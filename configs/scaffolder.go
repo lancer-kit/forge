@@ -25,7 +25,7 @@ func (cfg ScaffolderCfg) Validate() error {
 type ForgeSchema map[string]ForgeTmpl
 
 type ForgeTmpl struct {
-	AssetPrefix string                 `yml:"asset_prefix"`
+	AssetPrefix string                 `yml:"assetprefix"`
 	Fields      map[string]interface{} `yml:"fields"`
 }
 
