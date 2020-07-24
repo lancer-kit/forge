@@ -6,6 +6,10 @@ import (
 	"os/exec"
 
 	"github.com/AlecAivazis/survey/v2"
+	"gopkg.in/yaml.v2"
+
+	forge "github.com/lancer-kit/forge/.forge"
+	"github.com/lancer-kit/forge/configs"
 )
 
 const (
@@ -35,6 +39,10 @@ type Cfg struct {
 	OutDir string // *
 
 	GoModulesProjectName string // *
+
+	// ForgeTmplKeyName defines the template key name defined in .forge
+	// directory in schema.yml file
+	ForgeTmplKeyName string
 }
 
 func AskSurvey() (*Cfg, error) {
@@ -51,43 +59,117 @@ func AskSurvey() (*Cfg, error) {
 
 	switch surveyCfg.ProjectGenType {
 	case TmplTypeDefault:
-		var genTypeSurvey = new(genTypeSurvey)
-
-		genTypeSurvey, err = askProjectGenTypeQuestion()
+		err = surveyCfg.ask()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get the survey answer: %s", err)
+			return nil, err
 		}
-		if genTypeSurvey.WithGitOrigin == "yes" {
-			surveyCfg.GitOrigin, err = askPromptInput("Enter Git origin address:", "")
-		}
-
-		switch genTypeSurvey.ProjectGenType {
-		case ProjectGenGoPathType:
-			surveyCfg.GoPathDomainName, err = askPromptInput("Enter Project domain name` "+
-				"(ex. gitlab.com/team/project) to be created in GOPATH", "forge")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get the survey answer: %s", err)
-
-			}
-			return surveyCfg, nil
-
-		case ProjectGenGoModulesType:
-			var genModulesSurvey = new(genGoModulesSurvey)
-			genModulesSurvey, err = askGenGoModulesSurvey()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get the survey answer: %s", err)
-			}
-
-			surveyCfg.OutDir = genModulesSurvey.OutDirPath
-			surveyCfg.GoModulesProjectName = genModulesSurvey.ProjectName
-
-			return surveyCfg, nil
-		}
+		return surveyCfg, nil
 
 	case TmplTypeForge:
+		// extract all forge template key names
+		tmpls, err := getForgeTmplKeyNames()
+		if err != nil {
+			return nil, err
+		}
+		surveyCfg.ForgeTmplKeyName, err = askPromptSelect("Choose forge template name:", "", tmpls)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get the forge template name: %s", err)
+		}
+		err = surveyCfg.ask()
+		if err != nil {
+			return nil, err
+		}
 
+		return surveyCfg, nil
 	}
 	return surveyCfg, err
+}
+
+func (c *Cfg) ask() error {
+	var (
+		genTypeSurvey = new(genTypeSurvey)
+		err           error
+	)
+
+	genTypeSurvey, err = askProjectGenTypeQuestion()
+	if err != nil {
+		return fmt.Errorf("failed to get the survey answer: %s", err)
+	}
+	if genTypeSurvey.WithGitOrigin == "yes" {
+		c.GitOrigin, err = askPromptInput("Enter Git origin address:", "")
+		if err != nil {
+			return fmt.Errorf("failed to get the git origin address")
+		}
+	}
+
+	switch genTypeSurvey.ProjectGenType {
+	case ProjectGenGoPathType:
+		c.GoPathDomainName, err = askPromptInput("Enter Project domain name` "+
+			"(ex. gitlab.com/team/project) to be created in GOPATH", "forge")
+		if err != nil {
+			return fmt.Errorf("failed to get the survey answer: %s", err)
+
+		}
+		return nil
+
+	case ProjectGenGoModulesType:
+		var genModulesSurvey = new(genGoModulesSurvey)
+		genModulesSurvey, err = askGenGoModulesSurvey()
+		if err != nil {
+			return fmt.Errorf("failed to get the survey answer: %s", err)
+		}
+
+		c.OutDir = genModulesSurvey.OutDirPath
+		c.GoModulesProjectName = genModulesSurvey.ProjectName
+
+		return nil
+	default:
+		return fmt.Errorf("wron project generation type")
+	}
+}
+
+func getForgeTmplKeyNames() ([]string, error) {
+	asset, err := forge.Asset(configs.ForgeSchemaAssetName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load the %s asset: %s", configs.ForgeSchemaAssetName, err)
+	}
+
+	forgeSchema := map[string]configs.ForgeTmpl{}
+	err = yaml.Unmarshal(asset, &forgeSchema)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal the forge schema: %s", err)
+	}
+
+	keys := make([]string, 0, len(forgeSchema))
+
+	for k := range forgeSchema {
+		keys = append(keys, k)
+	}
+	return keys, nil
+}
+
+func (c *Cfg) GetForgeTmpl() (*configs.ForgeTmpl, error) {
+	if c.ForgeTmplKeyName != "" {
+		// Get Forge schema to config
+		asset, err := forge.Asset(configs.ForgeSchemaAssetName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load the %s asset: %s", configs.ForgeSchemaAssetName, err)
+		}
+
+		forgeSchema := map[string]configs.ForgeTmpl{}
+		err = yaml.Unmarshal(asset, &forgeSchema)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal the forge schema: %s", err)
+		}
+
+		forgeTmpl, ok := forgeSchema[c.ForgeTmplKeyName]
+		if !ok {
+			return nil, fmt.Errorf("failed to get %s tmpl from forge schema: %s", c.ForgeTmplKeyName, err)
+
+		}
+		return &forgeTmpl, nil
+	}
+	return nil, nil
 }
 
 func (c *Cfg) InitGoModulesInOutPath() error {

@@ -69,29 +69,11 @@ func scaffoldConfig(srvCfg *srv.Cfg) (*configs.ScaffolderCfg, error) {
 		cfg.ProjectName = srvCfg.GoPathDomainName
 	}
 
-	//var forgeTmplKeyName = flagsValues.withForgeTmpl
-	//if forgeTmplKeyName != "" {
-	//	cfg.ForgeTmplKeyName = forgeTmplKeyName
-	//
-	//	// Get Forge schema to config
-	//	asset, err := forge.Asset(configs.ForgeSchemaAssetName)
-	//	if err != nil {
-	//		return nil, fmt.Errorf("failed to load the %s asset: %s", configs.ForgeSchemaAssetName, err)
-	//	}
-	//
-	//	forgeSchema := map[string]configs.ForgeTmpl{}
-	//	err = yaml.Unmarshal(asset, &forgeSchema)
-	//	if err != nil {
-	//		log.Println(err)
-	//
-	//		return nil, fmt.Errorf("failed to unmarshal the forge schema: %s", err)
-	//	}
-	//	forgeTmpl, ok := forgeSchema[forgeTmplKeyName]
-	//	if !ok {
-	//		return nil, fmt.Errorf("failed to get %s tmpl from forge schema: %s", forgeTmplKeyName, err)
-	//
-	//	}
-	//	cfg.ForgeTmpl = &forgeTmpl
-	//}
+	tmpl, err := srvCfg.GetForgeTmpl()
+	if err != nil {
+		return nil, err
+	}
+	cfg.ForgeTmpl = tmpl
+
 	return cfg, nil
 }
